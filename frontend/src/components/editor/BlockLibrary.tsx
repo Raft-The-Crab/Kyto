@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Search, GripVertical } from 'lucide-react'
+import { Search, GripVertical, ChevronRight } from 'lucide-react'
 import { BLOCK_DEFINITIONS, BLOCK_CATEGORIES } from '@/lib/blocks/definitions'
 import { BlockType, BlockCategory } from '@/types'
 import * as Icons from 'lucide-react'
@@ -24,36 +24,37 @@ export function BlockLibrary({ onBlockDragStart }: BlockLibraryProps) {
   })
 
   return (
-    <aside className="w-80 bg-slate-900 border-r border-slate-800 flex flex-col overflow-hidden">
-      {/* Header */}
-      <div className="p-4 border-b border-slate-800">
-        <h2 className="text-white font-bold text-lg mb-3 flex items-center gap-2">
-          <Icons.Box className="w-5 h-5 text-indigo-400" />
+    <div className="h-full flex flex-col bg-white overflow-hidden">
+      {/* Sidebar Header */}
+      <div className="p-5 border-b-2 border-slate-100">
+        <h2 className="text-xl font-black text-slate-900 mb-4 flex items-center gap-2">
           Blocks
+          <span className="text-xs bg-indigo-100 text-indigo-700 px-2 py-0.5 rounded-full font-bold">
+            {Object.keys(BLOCK_DEFINITIONS).length}
+          </span>
         </h2>
 
-        {/* Search */}
-        <div className="relative">
-          <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+        <div className="relative group">
+          <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 group-focus-within:text-indigo-600 transition-colors" />
           <input
             type="text"
-            placeholder="Search blocks..."
+            placeholder="Search components..."
             value={searchQuery}
             onChange={e => setSearchQuery(e.target.value)}
-            className="w-full pl-10 pr-4 py-2 bg-slate-800 border border-slate-700 rounded-lg text-white text-sm placeholder-slate-400 focus:outline-none focus:border-indigo-500"
+            className="w-full pl-10 pr-4 py-3 bg-slate-50 border-2 border-slate-200 rounded-xl text-slate-900 text-sm font-medium placeholder-slate-400 focus:outline-none focus:border-indigo-600 focus:bg-white transition-all"
           />
         </div>
       </div>
 
-      {/* Category Tabs */}
-      <div className="flex gap-2 px-4 py-3 border-b border-slate-800 overflow-x-auto">
+      {/* Categories */}
+      <div className="flex gap-2 px-5 py-3 border-b-2 border-slate-100 overflow-x-auto no-scrollbar mask-gradient">
         <button
           onClick={() => setActiveCategory('all')}
           className={cn(
-            'px-3 py-1.5 rounded-md text-xs font-medium whitespace-nowrap transition-all',
+            'px-4 py-1.5 rounded-full text-xs font-bold whitespace-nowrap transition-all border-2',
             activeCategory === 'all'
-              ? 'bg-indigo-600 text-white'
-              : 'bg-slate-800 text-slate-400 hover:text-white'
+              ? 'bg-slate-900 text-white border-slate-900'
+              : 'bg-white text-slate-500 border-slate-200 hover:border-slate-300'
           )}
         >
           All
@@ -63,10 +64,10 @@ export function BlockLibrary({ onBlockDragStart }: BlockLibraryProps) {
             key={key}
             onClick={() => setActiveCategory(key as BlockCategory)}
             className={cn(
-              'px-3 py-1.5 rounded-md text-xs font-medium whitespace-nowrap transition-all',
+              'px-4 py-1.5 rounded-full text-xs font-bold whitespace-nowrap transition-all border-2',
               activeCategory === key
-                ? 'bg-indigo-600 text-white'
-                : 'bg-slate-800 text-slate-400 hover:text-white'
+                ? 'bg-indigo-600 text-white border-indigo-600 shadow-lg shadow-indigo-200'
+                : 'bg-white text-slate-500 border-slate-200 hover:border-slate-300'
             )}
           >
             {label}
@@ -75,10 +76,11 @@ export function BlockLibrary({ onBlockDragStart }: BlockLibraryProps) {
       </div>
 
       {/* Blocks List */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-2">
+      <div className="flex-1 overflow-y-auto p-5 space-y-3">
         {filteredBlocks.length === 0 ? (
-          <div className="text-center py-8">
-            <p className="text-slate-500 text-sm">No blocks found</p>
+          <div className="text-center py-10 opacity-50">
+            <p className="font-bold text-slate-900">No blocks found</p>
+            <p className="text-sm">Try a different search</p>
           </div>
         ) : (
           filteredBlocks.map(block => {
@@ -91,26 +93,26 @@ export function BlockLibrary({ onBlockDragStart }: BlockLibraryProps) {
                 key={block.type}
                 draggable
                 onDragStart={() => onBlockDragStart(block.type)}
-                className="group bg-slate-800 hover:bg-slate-750 border border-slate-700 hover:border-indigo-500/50 rounded-lg p-3 cursor-grab active:cursor-grabbing transition-all"
+                className="group bg-white border-2 border-slate-200 hover:border-indigo-600 rounded-xl p-3.5 cursor-grab active:cursor-grabbing transition-all hover:shadow-[4px_4px_0px_0px_rgba(79,70,229,0.2)] hover:-translate-y-0.5"
               >
                 <div className="flex items-start gap-3">
                   <div
-                    className="p-2 rounded-md flex-shrink-0"
+                    className="p-2.5 rounded-lg flex-shrink-0 shadow-sm"
                     style={{ backgroundColor: `${block.color}15` }}
                   >
                     {IconComponent && (
-                      <IconComponent className="w-4 h-4" style={{ color: block.color }} />
+                      <IconComponent className="w-5 h-5" style={{ color: block.color }} />
                     )}
                   </div>
 
-                  <div className="flex-1 min-w-0">
+                  <div className="flex-1 min-w-0 pt-0.5">
                     <div className="flex items-center justify-between gap-2 mb-1">
-                      <h3 className="text-white font-semibold text-sm truncate">
+                      <h3 className="text-slate-900 font-bold text-sm truncate">
                         {block.label}
                       </h3>
-                      <GripVertical className="w-4 h-4 text-slate-600 group-hover:text-slate-400 flex-shrink-0" />
+                      <GripVertical className="w-4 h-4 text-slate-300 group-hover:text-indigo-400" />
                     </div>
-                    <p className="text-slate-400 text-xs leading-relaxed line-clamp-2">
+                    <p className="text-slate-500 text-xs font-medium leading-relaxed line-clamp-2">
                       {block.description}
                     </p>
                   </div>
@@ -120,6 +122,6 @@ export function BlockLibrary({ onBlockDragStart }: BlockLibraryProps) {
           })
         )}
       </div>
-    </aside>
+    </div>
   )
 }
