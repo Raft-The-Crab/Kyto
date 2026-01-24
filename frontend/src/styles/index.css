@@ -1,4 +1,5 @@
 @import "tailwindcss";
+@import "@xyflow/react/dist/style.css";
 
 * {
   margin: 0;
@@ -22,4 +23,38 @@ code {
 #root {
   width: 100%;
   min-height: 100vh;
+}
+
+/* React Flow Custom Styles */
+.react-flow__node {
+  cursor: pointer;
+}
+
+.react-flow__handle {
+  cursor: crosshair;
+}
+
+.react-flow__edge-path {
+  stroke: #6366f1;
+  stroke-width: 2px;
+}
+
+.react-flow__edge.selected .react-flow__edge-path {
+  stroke: #818cf8;
+}
+
+.react-flow__controls {
+  background: #1e293b;
+  border: 1px solid #334155;
+  border-radius: 8px;
+}
+
+.react-flow__controls-button {
+  background: #1e293b;
+  border-bottom: 1px solid #334155;
+  color: #cbd5e1;
+}
+
+.react-flow__controls-button:hover {
+  background: #334155;
 }
