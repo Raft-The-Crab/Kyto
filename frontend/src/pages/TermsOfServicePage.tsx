@@ -1,85 +1,86 @@
-import { FileText } from 'lucide-react'
+import { NeoLayout } from '@/components/layout/NeoLayout'
+import { AlertCircle, Scale, FileText } from 'lucide-react'
+import { motion } from 'framer-motion'
 
-function TermsOfServicePage() {
+export default function TermsOfServicePage() {
   return (
-    <div className="min-h-screen bg-slate-950">
-      <div className="max-w-4xl mx-auto px-6 py-12">
-        <div className="flex items-center gap-4 mb-8">
-          <FileText className="w-10 h-10 text-indigo-400" />
-          <h1 className="text-4xl font-bold text-white">Terms of Service</h1>
-        </div>
-
-        <div className="bg-slate-900 border border-slate-800 rounded-xl p-8 space-y-8">
-          <section>
-            <h2 className="text-2xl font-bold text-white mb-4">1. Acceptance of Terms</h2>
-            <p className="text-slate-300 leading-relaxed">
-              By accessing and using Botify, you accept and agree to be bound by the terms and provision of this agreement. 
-              If you do not agree to these terms, please do not use this service.
-            </p>
-          </section>
-
-          <section>
-            <h2 className="text-2xl font-bold text-white mb-4">2. Use License</h2>
-            <p className="text-slate-300 leading-relaxed mb-3">
-              Botify grants you a personal, non-transferable, non-exclusive license to use the software and services.
-            </p>
-            <ul className="list-disc list-inside text-slate-300 space-y-2 ml-4">
-              <li>You own all code generated through Botify</li>
-              <li>You may use, modify, and distribute generated code freely</li>
-              <li>You may not resell or redistribute Botify itself</li>
-              <li>You may not use Botify for illegal purposes</li>
-            </ul>
-          </section>
-
-          <section>
-            <h2 className="text-2xl font-bold text-white mb-4">3. Code Ownership</h2>
-            <p className="text-slate-300 leading-relaxed">
-              All code generated using Botify is your property. We claim no ownership or rights to your generated Discord bots. 
-              You are free to deploy, modify, sell, or distribute the generated code as you see fit.
-            </p>
-          </section>
-
-          <section>
-            <h2 className="text-2xl font-bold text-white mb-4">4. Privacy & Data</h2>
-            <p className="text-slate-300 leading-relaxed">
-              Botify is designed with privacy in mind. All bot projects are stored locally in your browser. 
-              We do not collect, store, or transmit your bot data to external servers unless you explicitly choose to sync with optional cloud features.
-            </p>
-          </section>
-
-          <section>
-            <h2 className="text-2xl font-bold text-white mb-4">5. Disclaimer</h2>
-            <p className="text-slate-300 leading-relaxed">
-              Botify is provided "as is" without warranty of any kind. We do not guarantee that the service will be uninterrupted or error-free. 
-              You use Botify at your own risk.
-            </p>
-          </section>
-
-          <section>
-            <h2 className="text-2xl font-bold text-white mb-4">6. Discord Terms Compliance</h2>
-            <p className="text-slate-300 leading-relaxed">
-              You are responsible for ensuring that your Discord bot complies with Discord's Terms of Service and Developer Terms. 
-              Botify is a tool - you are responsible for how you use it.
-            </p>
-          </section>
-
-          <section>
-            <h2 className="text-2xl font-bold text-white mb-4">7. Changes to Terms</h2>
-            <p className="text-slate-300 leading-relaxed">
-              We reserve the right to modify these terms at any time. Changes will be effective immediately upon posting. 
-              Your continued use of Botify constitutes acceptance of modified terms.
-            </p>
-          </section>
-
-          <div className="pt-6 border-t border-slate-800">
-            <p className="text-slate-400 text-sm">
-              Last updated: January 24, 2026
+    <NeoLayout>
+      <div className="max-w-4xl mx-auto py-12 px-6">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="space-y-12"
+        >
+          <div className="text-center space-y-4 mb-20">
+            <div className="inline-flex items-center gap-2 px-4 py-2 bg-indigo-50 text-indigo-600 rounded-full border-2 border-indigo-600 font-black text-xs uppercase tracking-widest">
+              <Scale className="w-4 h-4" /> Legal
+            </div>
+            <h1 className="text-6xl md:text-8xl font-black text-slate-900 tracking-tighter">
+              TERMS OF SERVICE
+            </h1>
+            <p className="text-lg text-slate-500 font-bold uppercase tracking-widest">
+              Effective Date: January 20, 2026
             </p>
           </div>
-        </div>
+
+          <div className="prose prose-slate prose-xl max-w-none space-y-12">
+            <section className="space-y-6">
+              <h2 className="text-3xl font-black text-slate-900 flex items-center gap-3">
+                <span className="w-10 h-10 bg-slate-900 text-white rounded-xl flex items-center justify-center text-xl shrink-0">
+                  1
+                </span>
+                Agreement to Terms
+              </h2>
+              <p className="text-slate-600 font-medium leading-relaxed">
+                By accessing or using Botify ("the Service"), you agree to be bound by these Terms
+                of Service. If you do not agree to all of the terms, do not access the Service.
+              </p>
+            </section>
+
+            <section className="space-y-6">
+              <h2 className="text-3xl font-black text-slate-900 flex items-center gap-3">
+                <span className="w-10 h-10 bg-slate-900 text-white rounded-xl flex items-center justify-center text-xl shrink-0">
+                  2
+                </span>
+                Use of the Service
+              </h2>
+              <div className="space-y-4">
+                <TermItem text="You are responsible for any bots you create and deploy using Botify." />
+                <TermItem text="You must not use the service for illegal or unauthorized purposes." />
+                <TermItem text="You must comply with Discord's Developer Terms of Service at all times." />
+              </div>
+            </section>
+
+            <section className="space-y-6 py-12 bg-yellow-50 rounded-3xl border-2 border-slate-900 p-8 shadow-neo-sm">
+              <div className="flex items-center gap-4 mb-4">
+                <AlertCircle className="w-8 h-8 text-yellow-600" />
+                <h2 className="text-3xl font-black text-slate-900 uppercase">
+                  Limitation of Liability
+                </h2>
+              </div>
+              <p className="text-slate-600 font-medium leading-relaxed italic">
+                Botify is provided "as is" and "as available". We are not responsible for any issues
+                arising from Discord's API changes or bot downtime.
+              </p>
+            </section>
+
+            <div className="text-center pt-20 border-t-2 border-slate-100">
+              <div className="inline-flex items-center gap-2 font-black text-slate-400 uppercase tracking-widest text-sm">
+                <FileText className="w-4 h-4" /> End of Document
+              </div>
+            </div>
+          </div>
+        </motion.div>
       </div>
-    </div>
+    </NeoLayout>
   )
 }
 
-export default TermsOfServicePage
+function TermItem({ text }: { text: string }) {
+  return (
+    <div className="flex items-start gap-4 p-4 bg-white border-2 border-slate-100 rounded-xl hover:border-slate-300 transition-all">
+      <div className="w-2 h-2 mt-2 bg-indigo-600 rounded-full shrink-0" />
+      <p className="font-bold text-slate-700 leading-tight">{text}</p>
+    </div>
+  )
+}

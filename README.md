@@ -1,112 +1,41 @@
-# Botify - Next-Generation Discord Bot Builder
+# Botify Production Platform
 
-🚀 **Free, powerful, and beginner-friendly visual Discord bot builder**
+Industrial-grade visual orchestration system for high-fidelity Discord infrastructure. Balanced, stable, and architected for professional bot development.
 
-Build Discord bots with zero coding experience while generating production-ready source code.
+## Overview
 
-## 🎯 Features
+Botify provides a unified environment for designing complex logical flows via a visual canvas, translating high-level components into production-grade source code. This is a proprietary development platform designed by **Raft-The-Crab**.
 
-- **Visual Bot Building**: Drag-and-drop block-based editor
-- **Code Generation**: Clean, production-ready Discord.js code
-- **Full Discord API Coverage**: Commands, events, buttons, modals, and more
-- **Template Library**: Start with pre-built bot templates
-- **Offline First**: Works entirely in your browser
-- **Free Forever**: No paywalls, no premium tiers
-- **You Own the Code**: Export and deploy anywhere
+### Core Architecture
 
-## 📁 Project Structure
+- **Visual Engine**: Reactive node-based environment powered by XYFlow (@xyflow/react).
+- **Embedded IDE**: High-performance source code editing via Monaco Editor with custom industrial themes.
+- **Transpilation Layer**: Real-time bi-directional synchronization between visual nodes and Discord.js/Discord.py source targets.
+- **State Infrastructure**: High-speed localized persistence using Zustand and IndexedDB.
 
-```
-Botify/
-├── frontend/           # React + TypeScript frontend
-│   ├── src/
-│   │   ├── components/ # React components
-│   │   ├── engine/     # Code generation & validation
-│   │   ├── lib/        # Utilities and helpers
-│   │   ├── store/      # State management (Zustand)
-│   │   ├── types/      # TypeScript type definitions
-│   │   ├── templates/  # Code generation templates
-│   │   ├── constants/  # Discord API constants
-│   │   └── hooks/      # Custom React hooks
-│   ├── public/         # Static assets
-│   └── package.json
-├── docs/               # Documentation
-└── README.md
-```
+## Technical Specifications
 
-## 🚀 Getting Started
+- **Framework**: React 18 / TypeScript
+- **Styling**: Tailwind CSS 4 / HeroUI / Framer Motion
+- **Runtime Target**: Node.js / Python Runtime
+- **API Coverage**: Full Discord Gateway support (Voice, Threads, AutoMod, Scheduled Events)
 
-### Prerequisites
+## Deployment Pipeline
 
-- Node.js 18+ and npm
+The platform utilizes a multi-stage deployment sequence for logic verification:
 
-### Installation
+1.  **Transpilation**: Conversion of visual nodes to target language.
+2.  **Validation**: Structural and logical checking against API constraints.
+3.  **Synchronization**: Real-time push to Discord Gateway infrastructure.
 
-```bash
-# Navigate to frontend
-cd frontend
+## Access & Licensing
 
-# Install dependencies
-npm install
+**Proprietary Software**. This repository and its associated builds are restricted.
 
-# Start development server
-npm run dev
-```
-
-The app will open at `http://localhost:3000`
-
-## 🛠️ Development
-
-```bash
-# Run dev server
-npm run dev
-
-# Build for production
-npm run build
-
-# Preview production build
-npm run preview
-
-# Run linter
-npm run lint
-
-# Format code
-npm run format
-
-# Type check
-npm run type-check
-```
-
-## 📦 Tech Stack
-
-- **Frontend**: Vite + React 18 + TypeScript
-- **Visual Editor**: React Flow (@xyflow/react)
-- **Code Editor**: Monaco Editor
-- **State Management**: Zustand
-- **Storage**: IndexedDB (idb)
-- **Styling**: Tailwind CSS 4
-- **UI Components**: Custom components with Lucide icons
-- **Animations**: Framer Motion
-- **Forms**: React Hook Form + Zod
-
-## 🎯 Roadmap
-
-- [x] Project foundation and directory structure
-- [ ] Visual block editor
-- [ ] Discord.js code generator
-- [ ] Template library
-- [ ] Export functionality
-- [ ] Testing simulator
-- [ ] Advanced features
-
-## 📄 License
-
-MIT License - See LICENSE file for details
-
-## 🤝 Contributing
-
-Contributions welcome! Please read our contributing guidelines first.
+- **License**: Private / Authorized Access Only.
+- **Ownership**: Raft-The-Crab.
+- Unauthorized reproduction, modification, or distribution is strictly prohibited.
 
 ---
 
-Built with ❤️ for the Discord community
+© 2026 Raft-The-Crab. All rights reserved.

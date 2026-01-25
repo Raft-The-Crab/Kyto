@@ -6,18 +6,19 @@ interface EditorState extends CanvasState {
   // Actions
   addBlock: (type: BlockType, position: { x: number; y: number }) => void
   removeBlock: (id: string) => void
-  updateBlock: (id: string, data: Partial<CanvasBlock['data']>) => void
+  updateBlock: (id: string, updates: Partial<CanvasBlock>) => void
   selectBlock: (id: string | null) => void
-  
+
   addConnection: (connection: BlockConnection) => void
   removeConnection: (id: string) => void
-  
+
   updateViewport: (position: { x: number; y: number; zoom: number }) => void
-  
+
   // Helpers
   getBlockById: (id: string) => CanvasBlock | undefined
   clearCanvas: () => void
   duplicateBlock: (id: string) => void
+  setCanvasState: (state: CanvasState) => void
 }
 
 export const useEditorStore = create<EditorState>((set, get) => ({
@@ -31,7 +32,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
     if (!definition) return
 
     const id = `block_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
-    
+
     const defaultProperties: Record<string, unknown> = {}
     definition.properties.forEach(prop => {
       if (prop.defaultValue !== undefined) {
@@ -64,26 +65,22 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   removeBlock: id => {
     set(state => ({
       blocks: state.blocks.filter(block => block.id !== id),
-      connections: state.connections.filter(
-        conn => conn.source !== id && conn.target !== id
-      ),
+      connections: state.connections.filter(conn => conn.source !== id && conn.target !== id),
       selectedBlockId: state.selectedBlockId === id ? null : state.selectedBlockId,
     }))
   },
 
-  updateBlock: (id, data) => {
+  updateBlock: (id, updates) => {
     set(state => ({
-      blocks: state.blocks.map(block =>
-        block.id === id
-          ? {
-              ...block,
-              data: {
-                ...block.data,
-                ...data,
-              },
-            }
-          : block
-      ),
+      blocks: state.blocks.map(block => {
+        if (block.id !== id) return block
+
+        const newBlock = { ...block, ...updates }
+        if (updates.data) {
+          newBlock.data = { ...block.data, ...updates.data }
+        }
+        return newBlock
+      }),
     }))
   },
 
@@ -141,5 +138,14 @@ export const useEditorStore = create<EditorState>((set, get) => ({
       blocks: [...state.blocks, newBlock],
       selectedBlockId: newId,
     }))
+  },
+
+  setCanvasState: newState => {
+    set({
+      blocks: newState.blocks || [],
+      connections: newState.connections || [],
+      selectedBlockId: newState.selectedBlockId || null,
+      viewportPosition: newState.viewportPosition || { x: 0, y: 0, zoom: 1 },
+    })
   },
 }))

@@ -1,18 +1,78 @@
 // Core block types for the visual editor
-export type BlockCategory = 'actions' | 'conditions' | 'variables' | 'replies' | 'advanced'
+export type BlockCategory =
+  | 'actions'
+  | 'conditions'
+  | 'variables'
+  | 'replies'
+  | 'advanced'
+  | 'triggers'
+  | 'logic'
+  | 'moderation'
+  | 'data'
 
 export type BlockType =
+  // Triggers
+  | 'command_slash'
+  | 'command_sub'
+  | 'event_listener'
+  | 'on_button_click'
+  | 'on_select_menu'
+  | 'on_modal_submit'
+  | 'command_user'
+  | 'command_message'
+
+  // Logic
+  | 'if_condition'
+  | 'for_loop'
+  | 'wait'
+  | 'error_handler'
+  | 'set_variable'
+  | 'get_variable'
+  | 'math_operation'
+
+  // Actions
   | 'send_message'
   | 'edit_message'
+  | 'delete_message'
   | 'send_embed'
   | 'add_button'
   | 'add_select_menu'
-  | 'edit_component'
-  | 'delete_message'
-  | 'if_condition'
-  | 'wait'
-  | 'set_variable'
-  | 'error_handler'
+  | 'show_modal'
+  | 'action_reply'
+
+  // Moderation
+  | 'action_role_add'
+  | 'action_role_remove'
+  | 'action_kick'
+  | 'action_ban'
+  | 'action_timeout'
+
+  // Data & API
+  | 'http_request'
+  | 'parse_json'
+  | 'stringify_json'
+  | 'database_get'
+  | 'database_set'
+
+  // Advanced & Discord API
+  | 'voice_join'
+  | 'voice_leave'
+  | 'voice_mute'
+  | 'thread_create'
+  | 'thread_join'
+  | 'thread_archive'
+  | 'automod_alert'
+  | 'automod_rule_create'
+  | 'event_schedule'
+  | 'event_cancel'
+  | 'stage_start'
+  | 'stage_end'
+  | 'invite_create'
+  | 'sticker_send'
+  | 'emoji_add'
+  | 'role_create'
+  | 'channel_create'
+  | 'member_timeout'
 
 export interface BlockConnection {
   id: string
@@ -27,22 +87,21 @@ export interface BlockData {
   type: BlockType
   label: string
   category: BlockCategory
-  
-  // Block-specific properties
-  properties: Record<string, unknown>
-  
-  // Validation state
+  properties: Record<string, any>
   isValid: boolean
   errors: string[]
   warnings: string[]
 }
 
-export interface CanvasBlock {
+export interface Block {
   id: string
   type: BlockType
   position: { x: number; y: number }
   data: BlockData
+  measured?: { width: number; height: number }
 }
+
+export type CanvasBlock = Block
 
 export interface BlockDefinition {
   type: BlockType
@@ -51,19 +110,15 @@ export interface BlockDefinition {
   category: BlockCategory
   icon: string
   color: string
-  
-  // Input/output connection points
   inputs: number
   outputs: number
-  
-  // Property schema
   properties: BlockProperty[]
 }
 
 export interface BlockProperty {
   key: string
   label: string
-  type: 'text' | 'textarea' | 'select' | 'number' | 'boolean' | 'color' | 'message'
+  type: 'text' | 'textarea' | 'select' | 'number' | 'boolean' | 'color' | 'message' | 'options_list'
   required: boolean
   defaultValue?: unknown
   options?: { label: string; value: string }[]
@@ -71,7 +126,6 @@ export interface BlockProperty {
   helperText?: string
 }
 
-// Canvas state
 export interface CanvasState {
   blocks: CanvasBlock[]
   connections: BlockConnection[]
@@ -79,7 +133,6 @@ export interface CanvasState {
   viewportPosition: { x: number; y: number; zoom: number }
 }
 
-// Command/Event/Module types
 export type CommandType = 'slash' | 'message' | 'user' | 'autocomplete'
 
 export interface SlashCommandOption {
@@ -118,25 +171,21 @@ export interface Module {
   description: string
   commands: Command[]
   events: EventListener[]
-  canvas: CanvasState
+  canvas: CanvasState // Global canvas for the whole module
   createdAt: number
   updatedAt: number
 }
 
-// Project types
 export interface Project {
   id: string
   name: string
   description: string
   language: 'discord.js' | 'discord.py'
   version: string
-  
   commands: Command[]
   events: EventListener[]
   modules: Module[]
-  
   settings: ProjectSettings
-  
   createdAt: number
   updatedAt: number
 }

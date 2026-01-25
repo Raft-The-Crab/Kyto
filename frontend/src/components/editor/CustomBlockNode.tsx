@@ -1,34 +1,39 @@
 import { memo } from 'react'
-import { Handle, Position, NodeProps } from '@xyflow/react'
+import { Handle, Position, Node, NodeProps } from '@xyflow/react'
 import { BLOCK_DEFINITIONS } from '@/lib/blocks/definitions'
 import { BlockType } from '@/types'
 import * as Icons from 'lucide-react'
 import { cn } from '@/lib/utils'
 
-interface CustomNodeData {
+export type CustomNodeData = {
   type: BlockType
   label: string
-  properties: Record<string, unknown>
+  properties: Record<string, any>
   isValid: boolean
   errors: string[]
 }
 
-export const CustomBlockNode = memo(({ data, selected }: NodeProps<CustomNodeData>) => {
+export const CustomBlockNode = memo(({ data, selected }: NodeProps<Node<CustomNodeData>>) => {
   const definition = BLOCK_DEFINITIONS[data.type]
+
   if (!definition) return null
 
   const IconComponent = Icons[definition.icon as keyof typeof Icons] as React.ComponentType<{
     className?: string
+    style?: React.CSSProperties
   }>
 
-  const hasErrors = data.errors.length > 0
+  const hasErrors = data.errors?.length > 0
 
   return (
     <div
       className={cn(
-        'bg-slate-800 border-2 rounded-lg shadow-lg min-w-[220px] transition-all',
-        selected ? 'border-indigo-500 shadow-indigo-500/50' : 'border-slate-700',
-        hasErrors && 'border-red-500'
+        'bg-white dark:bg-slate-900 border-2 rounded-2xl shadow-neo-sm transition-all min-w-[240px] overflow-hidden',
+        selected
+          ? 'border-indigo-600 dark:border-indigo-400 shadow-neo scale-[1.02]'
+          : 'border-slate-900 dark:border-slate-700',
+        data.type === 'command_slash' &&
+          'border-indigo-600 dark:border-indigo-500 ring-4 ring-indigo-500/10'
       )}
     >
       {/* Input Handle */}
@@ -36,41 +41,51 @@ export const CustomBlockNode = memo(({ data, selected }: NodeProps<CustomNodeDat
         <Handle
           type="target"
           position={Position.Top}
-          className="!bg-indigo-500 !w-3 !h-3 !border-2 !border-slate-900"
+          className="w-4! h-4! bg-indigo-500! border-2! border-white! dark:border-slate-900! shadow-neo-sm! hover:scale-125! transition-transform!"
         />
       )}
 
       {/* Node Header */}
-      <div
-        className="px-4 py-3 border-b border-slate-700 flex items-center gap-3"
-        style={{ backgroundColor: `${definition.color}15` }}
-      >
-        {IconComponent && (
-          <IconComponent className="w-5 h-5" style={{ color: definition.color }} />
-        )}
-        <div className="flex-1 min-w-0">
-          <h4 className="text-white font-semibold text-sm truncate">{definition.label}</h4>
+      <div className="px-5 py-4 border-b-2 border-slate-900 dark:border-slate-800 flex items-center justify-between gap-3 bg-slate-50 dark:bg-slate-900/50">
+        <div className="flex items-center gap-3">
+          <div className="p-2 rounded-lg border-2 border-slate-900 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-neo-sm">
+            {IconComponent && (
+              <IconComponent className="w-4 h-4" style={{ color: definition.color }} />
+            )}
+          </div>
+          <div className="min-w-0">
+            <h4 className="text-slate-900 dark:text-white font-black text-xs uppercase tracking-widest truncate">
+              {data.type === 'command_slash' ? 'Slash Trigger' : definition.label || data.label}
+            </h4>
+            {data.type === 'command_slash' && (
+              <p className="text-[10px] font-bold text-indigo-500 dark:text-indigo-400 leading-none mt-1 uppercase tracking-tighter">
+                Core Entity
+              </p>
+            )}
+          </div>
         </div>
-        {hasErrors && (
-          <Icons.AlertCircle className="w-4 h-4 text-red-400 flex-shrink-0" />
-        )}
+        {hasErrors && <Icons.AlertCircle className="w-4 h-4 text-red-500 shrink-0 animate-pulse" />}
       </div>
 
       {/* Node Content */}
       <div className="px-4 py-3">
-        <p className="text-slate-400 text-xs leading-relaxed">{definition.description}</p>
+        <p className="text-slate-600 dark:text-slate-400 text-xs leading-relaxed line-clamp-2">
+          {definition.description}
+        </p>
 
         {/* Show key properties if set */}
-        {Object.keys(data.properties).length > 0 && (
+        {data.properties && Object.keys(data.properties).length > 0 && (
           <div className="mt-2 space-y-1">
-            {Object.entries(data.properties).slice(0, 2).map(([key, value]) => (
-              <div key={key} className="text-xs">
-                <span className="text-slate-500">{key}:</span>{' '}
-                <span className="text-slate-300 truncate">
-                  {typeof value === 'boolean' ? (value ? 'Yes' : 'No') : String(value)}
-                </span>
-              </div>
-            ))}
+            {Object.entries(data.properties)
+              .slice(0, 2)
+              .map(([key, value]) => (
+                <div key={key} className="text-xs">
+                  <span className="text-slate-400 dark:text-slate-500">{key}:</span>{' '}
+                  <span className="text-slate-700 dark:text-slate-300 font-bold truncate">
+                    {typeof value === 'boolean' ? (value ? 'Yes' : 'No') : String(value)}
+                  </span>
+                </div>
+              ))}
           </div>
         )}
       </div>
@@ -80,24 +95,24 @@ export const CustomBlockNode = memo(({ data, selected }: NodeProps<CustomNodeDat
         <Handle
           type="source"
           position={Position.Bottom}
-          className="!bg-indigo-500 !w-3 !h-3 !border-2 !border-slate-900"
+          className="w-4! h-4! bg-indigo-500! border-2! border-white! dark:border-slate-900! shadow-neo-sm! hover:scale-125! transition-transform!"
         />
       )}
-      
+
       {definition.outputs === 2 && (
         <>
           <Handle
             type="source"
             position={Position.Bottom}
             id="true"
-            className="!bg-green-500 !w-3 !h-3 !border-2 !border-slate-900"
+            className="bg-green-500! w-3! h-3! border-2! border-slate-900!"
             style={{ left: '33%' }}
           />
           <Handle
             type="source"
             position={Position.Bottom}
             id="false"
-            className="!bg-red-500 !w-3 !h-3 !border-2 !border-slate-900"
+            className="bg-red-500! w-3! h-3! border-2! border-slate-900!"
             style={{ left: '66%' }}
           />
         </>
