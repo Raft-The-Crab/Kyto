@@ -1,8 +1,8 @@
 import { Hono } from "hono";
 import { cors } from "hono/cors";
-import { projectRoutes } from "./api/projects";
-import { exportRoutes } from "./api/export";
-import { aiRoutes } from "./api/ai";
+import { projectRoutes } from "./api/projects.js";
+import { exportRoutes } from "./api/export.js";
+import { aiRoutes } from "./api/ai.js";
 
 export interface Env {
   PROJECTS_KV: KVNamespace;
@@ -52,4 +52,4 @@ app.get("/collab/:projectId", async (c) => {
 export default app;
 
 // Export Durable Object for collaboration
-export { CollaborationRoom } from "./collab/room";
+export { CollaborationRoom } from "./collab/room.js";
