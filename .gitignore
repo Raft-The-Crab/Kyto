@@ -59,14 +59,14 @@ jspm_packages/
 .yarn/install-state.gz
 .pnp.*
 
-# dotenv environment variable files
+# Environment variable files (CRITICAL - DO NOT COMMIT)
 .env
-.env.development.local
-.env.test.local
-.env.production.local
-.env.local
+.env.*
+.dev.vars
+wrangler.toml
+.wrangler/
 
-# parcel-bundler cache (https://parceljs.org/)
+# parcel-bundler cache
 .cache
 .parcel-cache
 
@@ -86,7 +86,6 @@ dist
 
 # vuepress v2.x temp and cache directory
 .temp
-.cache
 
 # Docusaurus cache and generated files
 .docusaurus
@@ -139,12 +138,30 @@ Thumbs.db
 dist/
 dist-ssr/
 build/
+*.local
 
 # Temporary files
 *.tmp
 temp/
 
 # Local development
-.env.local
 .vercel
 .turbo
+
+# Backend-specific
+backend/dist/
+backend/node_modules/
+backend/.wrangler/
+backend/wrangler.toml
+backend/.dev.vars
+
+# Database files (if using local SQLite for testing)
+*.db
+*.sqlite
+*.sqlite3
+
+# Secrets and sensitive data
+secrets/
+*.pem
+*.key
+*.cert

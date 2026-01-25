@@ -1,41 +1,129 @@
-# Botify Production Platform
+# 🤖 Botify
 
-Industrial-grade visual orchestration system for high-fidelity Discord infrastructure. Balanced, stable, and architected for professional bot development.
+**Visual Discord Bot Builder** - Design, build, and deploy Discord bots without writing code.
 
-## Overview
-
-Botify provides a unified environment for designing complex logical flows via a visual canvas, translating high-level components into production-grade source code. This is a proprietary development platform designed by **Raft-The-Crab**.
-
-### Core Architecture
-
-- **Visual Engine**: Reactive node-based environment powered by XYFlow (@xyflow/react).
-- **Embedded IDE**: High-performance source code editing via Monaco Editor with custom industrial themes.
-- **Transpilation Layer**: Real-time bi-directional synchronization between visual nodes and Discord.js/Discord.py source targets.
-- **State Infrastructure**: High-speed localized persistence using Zustand and IndexedDB.
-
-## Technical Specifications
-
-- **Framework**: React 18 / TypeScript
-- **Styling**: Tailwind CSS 4 / HeroUI / Framer Motion
-- **Runtime Target**: Node.js / Python Runtime
-- **API Coverage**: Full Discord Gateway support (Voice, Threads, AutoMod, Scheduled Events)
-
-## Deployment Pipeline
-
-The platform utilizes a multi-stage deployment sequence for logic verification:
-
-1.  **Transpilation**: Conversion of visual nodes to target language.
-2.  **Validation**: Structural and logical checking against API constraints.
-3.  **Synchronization**: Real-time push to Discord Gateway infrastructure.
-
-## Access & Licensing
-
-**Proprietary Software**. This repository and its associated builds are restricted.
-
-- **License**: Private / Authorized Access Only.
-- **Ownership**: Raft-The-Crab.
-- Unauthorized reproduction, modification, or distribution is strictly prohibited.
+[![License](https://img.shields.io/badge/license-Private-red.svg)](LICENSE)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.3-blue.svg)](https://www.typescriptlang.org/)
+[![React](https://img.shields.io/badge/React-18-61DAFB.svg)](https://reactjs.org/)
 
 ---
 
-© 2026 Raft-The-Crab. All rights reserved.
+## ✨ Features
+
+- 🎨 **Visual Canvas** - Drag-and-drop node-based editor powered by React Flow
+- 💻 **Monaco IDE** - Professional code editing experience in your browser
+- 🔄 **Live Collaboration** - Work together with up to 2 users in real-time
+- 🤖 **AI Assistant** - Rule-based suggestions to help build your bot
+- 📦 **Multi-Language Export** - Generate production-ready Discord.js or Discord.py code
+- 🎯 **Full Discord API** - Commands, events, buttons, modals, voice, threads, and more
+
+---
+
+## 🛠️ Tech Stack
+
+### Frontend
+
+- **React 18** with TypeScript
+- **XYFlow** for visual node editor
+- **Monaco Editor** for code viewing
+- **Tailwind CSS 4** with Neo-Brutalism design
+- **Zustand** for state management
+- **Framer Motion** for animations
+
+### Backend
+
+- **Cloudflare Workers** for serverless API
+- **Durable Objects** for real-time collaboration
+- **KV Storage** for project persistence
+- **Hono** for routing
+
+---
+
+## 🚀 Getting Started
+
+### Prerequisites
+
+- Node.js 18+
+- npm or pnpm
+
+### Frontend Development
+
+```bash
+cd frontend
+npm install
+npm run dev
+```
+
+The app will run at `http://localhost:3000`
+
+### Backend Development
+
+```bash
+cd backend
+npm install
+npm run dev
+```
+
+The Workers API will run at `http://localhost:8787`
+
+---
+
+## 📁 Project Structure
+
+```
+Botify/
+├── frontend/          # React application
+│   ├── src/
+│   │   ├── components/
+│   │   ├── pages/
+│   │   ├── store/
+│   │   └── engine/
+│   └── package.json
+├── backend/           # Cloudflare Workers
+│   ├── src/
+│   │   ├── api/      # REST endpoints
+│   │   ├── collab/   # Real-time collaboration
+│   │   ├── ai/       # AI assistant
+│   │   └── export/   # Code generation
+│   └── package.json
+└── README.md
+```
+
+---
+
+## 🧑‍💻 Development
+
+### Commands
+
+```bash
+# Frontend
+npm run dev          # Start dev server
+npm run build        # Build for production
+npm run preview      # Preview production build
+npm run lint         # Run ESLint
+
+# Backend
+npm run dev          # Start Workers dev server
+npm run deploy       # Deploy to Cloudflare
+npm run tail         # View live logs
+```
+
+---
+
+## 📝 License
+
+**Private Software** - This repository and its builds are restricted to authorized users only.
+
+**Team**: Jacob & Dave
+
+Unauthorized copying, distribution, or modification is prohibited.
+
+---
+
+## 🤝 Contributing
+
+This is a private project. For access requests, please contact the team.
+
+---
+
+**Built with ⚡ by the Botify Team**

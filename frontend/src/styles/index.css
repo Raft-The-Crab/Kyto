@@ -29,139 +29,107 @@
   --color-card: var(--card);
   --color-card-foreground: var(--card-foreground);
 
-  --radius: 0.75rem;
+  --radius: 0px; /* Neo-Brutalism: Hard corners */
 
   --shadow-neo: var(--shadow-neo);
   --shadow-neo-lg: var(--shadow-neo-lg);
   --shadow-neo-sm: var(--shadow-neo-sm);
 }
 
-/* Custom Utilities for Tailwind v4 */
+/* Hard Neo-Brutalism Implementation */
 @utility shadow-neo {
-  box-shadow: var(--shadow-neo);
+  box-shadow: 4px 4px 0px 0px rgba(0, 0, 0, 1);
 }
 @utility shadow-neo-lg {
-  box-shadow: var(--shadow-neo-lg);
+  box-shadow: 8px 8px 0px 0px rgba(0, 0, 0, 1);
 }
 @utility shadow-neo-sm {
-  box-shadow: var(--shadow-neo-sm);
+  box-shadow: 2px 2px 0px 0px rgba(0, 0, 0, 1);
 }
 
 @layer base {
   :root {
-    /* Default / Light Theme */
-    --background: hsl(0 0% 100%);
-    --foreground: hsl(222.2 84% 4.9%);
-    --card: hsl(0 0% 100%);
-    --card-foreground: hsl(222.2 84% 4.9%);
-    --popover: hsl(0 0% 100%);
-    --popover-foreground: hsl(222.2 84% 4.9%);
-    --primary: hsl(246 80% 60%);
-    --primary-foreground: hsl(210 40% 98%);
-    --secondary: hsl(210 40% 96.1%);
-    --secondary-foreground: hsl(222.2 47.4% 11.2%);
-    --muted: hsl(210 40% 96.1%);
-    --muted-foreground: hsl(215.4 16.3% 46.9%);
-    --accent: hsl(210 40% 96.1%);
-    --accent-foreground: hsl(222.2 47.4% 11.2%);
-    --destructive: hsl(0 84.2% 60.2%);
-    --destructive-foreground: hsl(210 40% 98%);
-    --border: hsl(215 20% 65% / 0.2);
-    --input: hsl(214.3 31.8% 91.4%);
-    --ring: hsl(246 80% 60%);
-
-    --shadow-neo: 4px 4px 0px 0px rgba(15, 23, 42, 1);
-    --shadow-neo-lg: 8px 8px 0px 0px rgba(15, 23, 42, 1);
-    --shadow-neo-sm: 2px 2px 0px 0px rgba(15, 23, 42, 1);
+    --background: hsl(45 100% 96%); /* Off-white / Cream */
+    --foreground: hsl(0 0% 0%);
+    --card: hsl(45 100% 96%);
+    --card-foreground: hsl(0 0% 0%);
+    --popover: hsl(45 100% 96%);
+    --popover-foreground: hsl(0 0% 0%);
+    --primary: hsl(246 100% 64%);
+    --primary-foreground: hsl(0 0% 100%);
+    --secondary: hsl(150 100% 45%); /* High contrast green */
+    --secondary-foreground: hsl(0 0% 0%);
+    --muted: hsl(0 0% 90%);
+    --muted-foreground: hsl(0 0% 40%);
+    --accent: hsl(300 100% 60%); /* Vibrant pink */
+    --accent-foreground: hsl(0 0% 100%);
+    --destructive: hsl(0 100% 50%);
+    --destructive-foreground: hsl(0 0% 100%);
+    --border: hsl(0 0% 0%); /* Hard Black Borders */
+    --input: hsl(0 0% 0%);
+    --ring: hsl(0 0% 0%);
   }
 
   .dark {
-    /* Cyber / Dark Theme Preserving Brutalism */
-    --background: hsl(222.2 84% 4.9%);
-    --foreground: hsl(210 40% 98%);
-    --card: hsl(222.2 84% 4.9%);
-    --card-foreground: hsl(210 40% 98%);
-    --popover: hsl(222.2 84% 4.9%);
-    --popover-foreground: hsl(210 40% 98%);
+    --background: hsl(0 0% 5%);
+    --foreground: hsl(45 100% 96%);
+    --card: hsl(0 0% 8%);
+    --card-foreground: hsl(45 100% 96%);
+    --popover: hsl(0 0% 8%);
+    --popover-foreground: hsl(45 100% 96%);
 
-    --primary: hsl(217.2 91.2% 59.8%);
-    --primary-foreground: hsl(222.2 47.4% 11.2%);
+    --primary: hsl(246 100% 70%);
+    --secondary: hsl(150 100% 45%);
+    --accent: hsl(300 100% 65%);
+    --border: hsl(45 100% 96%); /* Hard White Borders */
 
-    --secondary: hsl(217.2 32.6% 17.5%);
-    --secondary-foreground: hsl(210 40% 98%);
-    --muted: hsl(217.2 32.6% 17.5%);
-    --muted-foreground: hsl(215 20.2% 65.1%);
-    --accent: hsl(217.2 32.6% 17.5%);
-    --accent-foreground: hsl(210 40% 98%);
-    --destructive: hsl(0 62.8% 30.6%);
-    --destructive-foreground: hsl(210 40% 98%);
-    --border: hsl(217.2 32.6% 25%);
-    --input: hsl(217.2 32.6% 17.5%);
-    --ring: hsl(212.7 26.8% 83.9%);
-
-    /* White Shadows for visibility on dark background */
-    --shadow-neo: 4px 4px 0px 0px rgba(255, 255, 255, 1);
-    --shadow-neo-lg: 8px 8px 0px 0px rgba(255, 255, 255, 1);
-    --shadow-neo-sm: 2px 2px 0px 0px rgba(255, 255, 255, 1);
-  }
-
-  .cyber {
-    --background: hsl(0 0% 0%);
-    --foreground: hsl(120 100% 50%);
-    --card: hsl(0 0% 5%);
-    --card-foreground: hsl(120 100% 50%);
-    --primary: hsl(300 100% 50%);
-    --primary-foreground: hsl(0 0% 0%);
-    --border: hsl(120 100% 50%);
-
-    --shadow-neo: 4px 4px 0px 0px hsl(300 100% 50%);
-    --shadow-neo-lg: 8px 8px 0px 0px hsl(300 100% 50%);
-    --shadow-neo-sm: 2px 2px 0px 0px hsl(300 100% 50%);
+    /* Dark mode shadow inverse */
+    --shadow-neo: 4px 4px 0px 0px rgba(45, 255, 96, 0.4);
   }
 }
 
 body {
-  @apply bg-background text-foreground font-sans transition-colors duration-300;
+  @apply bg-background text-foreground font-mono transition-colors duration-300 antialiased;
 }
 
-/* Scrollbar Styling */
-::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
-}
-::-webkit-scrollbar-track {
-  background: transparent;
-}
-::-webkit-scrollbar-thumb {
-  background: var(--color-muted-foreground);
-  border-radius: 4px;
-}
-::-webkit-scrollbar-thumb:hover {
-  background: var(--color-primary);
+/* Global Industrial Overrides */
+* {
+  @apply border-foreground;
 }
 
-/* React Flow Custom Styles - Optimized for Custom Nodes */
+button,
+input,
+select,
+textarea,
+div.card {
+  @apply border-2 border-slate-900 shadow-neo transition-all active:translate-x-[2px] active:translate-y-[2px] active:shadow-none;
+}
+
+/* React Flow Overhaul */
+.react-flow__background {
+  @apply bg-[radial-gradient(#000_1px,transparent_1px)] bg-[size:24px_24px] opacity-10;
+}
+
 .react-flow__node {
-  @apply rounded-xl border-0 bg-transparent;
+  @apply rounded-none border-4 border-slate-900 shadow-neo bg-white dark:bg-slate-900 !important;
 }
+
 .react-flow__node.selected {
-  @apply ring-0;
+  @apply border-indigo-600 ring-4 ring-indigo-600/20 !important;
 }
+
 .react-flow__handle {
-  @apply w-3 h-3 bg-background border-2 border-slate-900 dark:border-white transition-colors z-50;
+  @apply w-4 h-4 bg-white border-3 border-slate-900 rounded-none shadow-neo-sm;
 }
-.react-flow__handle:hover {
-  @apply bg-indigo-500 scale-125;
+
+.react-flow__edge-path {
+  @apply stroke-slate-900 stroke-[4px];
 }
+
 .react-flow__controls {
-  @apply bg-background border-2 border-slate-900 dark:border-white shadow-neo rounded-xl overflow-hidden m-4;
+  @apply border-4 border-slate-900 shadow-neo rounded-none !important;
 }
+
 .react-flow__controls-button {
-  @apply border-b border-slate-200 dark:border-slate-800 bg-background text-foreground hover:bg-muted border-r-0 border-l-0 border-t-0 rounded-none w-8 h-8 flex items-center justify-center;
-}
-.react-flow__controls-button:last-child {
-  @apply border-b-0;
-}
-.react-flow__minimap {
-  @apply border-2 border-slate-900 dark:border-white shadow-neo rounded-xl bg-background m-4;
+  @apply border-r-4 border-slate-900 last:border-r-0 !important;
 }

@@ -2,28 +2,27 @@ import * as React from 'react'
 import { Slot } from '@radix-ui/react-slot'
 import { cva, type VariantProps } from 'class-variance-authority'
 import { cn } from '@/lib/utils'
+import { motion } from 'framer-motion'
 
 const buttonVariants = cva(
-  'inline-flex items-center justify-center whitespace-nowrap rounded-xl text-sm font-bold ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border-2 border-slate-900 active:translate-y-0 active:shadow-none',
+  'inline-flex items-center justify-center whitespace-nowrap rounded-none text-xs font-black uppercase tracking-widest ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 border-4 border-black active:translate-x-[2px] active:translate-y-[2px] active:shadow-none',
   {
     variants: {
       variant: {
-        default:
-          'bg-indigo-600 text-white hover:bg-indigo-700 shadow-neo hover:-translate-y-0.5 hover:shadow-neo',
+        default: 'bg-primary text-primary-foreground shadow-neo hover:bg-primary/90',
         destructive:
-          'bg-red-500 text-white hover:bg-red-600 shadow-neo hover:-translate-y-0.5 hover:shadow-neo',
-        outline:
-          'bg-white hover:bg-slate-100 text-slate-900 shadow-neo hover:-translate-y-0.5 hover:shadow-neo',
-        secondary: 'bg-slate-100 text-slate-900 hover:bg-slate-200 shadow-neo-sm',
-        ghost: 'border-transparent shadow-none hover:bg-slate-100',
-        link: 'text-indigo-600 underline-offset-4 hover:underline border-0 shadow-none',
-        neo: 'bg-yellow-400 text-slate-900 hover:bg-yellow-500 shadow-neo hover:-translate-y-0.5 hover:shadow-neo',
+          'bg-destructive text-destructive-foreground shadow-neo hover:bg-destructive/90',
+        outline: 'bg-background hover:bg-muted text-foreground shadow-neo',
+        secondary: 'bg-secondary text-secondary-foreground shadow-neo hover:bg-secondary/90',
+        ghost: 'border-transparent shadow-none hover:bg-muted',
+        link: 'text-primary underline-offset-4 hover:underline border-0 shadow-none',
+        neo: 'bg-accent text-accent-foreground shadow-neo hover:bg-accent/90',
       },
       size: {
-        default: 'h-11 px-4 py-2',
-        sm: 'h-9 rounded-lg px-3',
-        lg: 'h-14 rounded-2xl px-8 text-base',
-        icon: 'h-11 w-11',
+        default: 'h-12 px-6 py-3',
+        sm: 'h-10 px-4',
+        lg: 'h-16 px-10 text-sm',
+        icon: 'h-12 w-12',
       },
     },
     defaultVariants: {
@@ -38,13 +37,10 @@ export interface ButtonProps
   asChild?: boolean
 }
 
-import { motion } from 'framer-motion'
-
 const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
   ({ className, variant, size, asChild = false, ...props }, ref) => {
     const Comp = asChild ? Slot : 'button'
 
-    // Wrap component definition logic
     const ButtonElement = (
       <Comp className={cn(buttonVariants({ variant, size, className }))} ref={ref} {...props} />
     )
@@ -52,7 +48,7 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
     if (asChild) return ButtonElement
 
     return (
-      <motion.div whileTap={{ scale: 0.95 }} className="inline-block">
+      <motion.div whileTap={{ scale: 0.98 }} className="inline-block">
         {ButtonElement}
       </motion.div>
     )
