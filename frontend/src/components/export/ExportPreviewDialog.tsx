@@ -9,6 +9,7 @@ interface ExportPreviewDialogProps {
   open: boolean
   onClose: () => void
   files: Array<{ path: string; size: number; preview: string; issues?: string[] }>
+  onDownloadZip?: () => void
 }
 
 function getLanguageFromPath(path: string) {
@@ -19,8 +20,9 @@ function getLanguageFromPath(path: string) {
   return 'plaintext'
 }
 
-export function ExportPreviewDialog({ open, onClose, files }: ExportPreviewDialogProps) {
+export function ExportPreviewDialog({ open, onClose, files, onDownloadZip }: ExportPreviewDialogProps) {
   const [active, setActive] = useState<string | null>(files[0]?.path ?? null)
+  const [editorTheme, setEditorTheme] = useState<string>(() => (localStorage.getItem('kyto_monaco_theme') || 'vs-dark'))
 
   useEffect(() => {
     if (files.length > 0) setActive(files[0]?.path ?? null)
@@ -51,6 +53,12 @@ export function ExportPreviewDialog({ open, onClose, files }: ExportPreviewDialo
     URL.revokeObjectURL(url)
   }, [current])
 
+  const toggleTheme = useCallback(() => {
+    const next = editorTheme === 'vs-dark' ? 'light' : 'vs-dark'
+    setEditorTheme(next)
+    try { localStorage.setItem('kyto_monaco_theme', next) } catch (e) {}
+  }, [editorTheme])
+
   return (
     <Dialog open={open} onOpenChange={onClose}>
       <DialogContent className="max-w-4xl">
@@ -68,6 +76,14 @@ export function ExportPreviewDialog({ open, onClose, files }: ExportPreviewDialo
               <Button type="button" onClick={onDownload} variant="outline" aria-label="Download file">
                 <Download className="w-4 h-4 mr-2" /> Download
               </Button>
+              <Button type="button" onClick={toggleTheme} variant="outline" aria-label="Toggle editor theme">
+                {editorTheme === 'vs-dark' ? 'Dark' : 'Light'}
+              </Button>
+              {onDownloadZip && (
+                <Button type="button" onClick={onDownloadZip} variant="neo" aria-label="Download all files as ZIP">
+                  <Download className="w-4 h-4 mr-2" /> Download ZIP
+                </Button>
+              )}
             </div>
           </div>
         </DialogHeader>
@@ -109,7 +125,7 @@ export function ExportPreviewDialog({ open, onClose, files }: ExportPreviewDialo
                     defaultLanguage={getLanguageFromPath(current.path)}
                     defaultValue={current.preview}
                     options={{ readOnly: true, minimap: { enabled: false }, fontSize: 12 }}
-                    theme={document.documentElement.classList.contains('dark') ? 'vs-dark' : 'light'}
+                    theme={editorTheme}
                   />
                 </div>
               </div>

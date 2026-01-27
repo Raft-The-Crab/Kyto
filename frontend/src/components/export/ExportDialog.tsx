@@ -171,7 +171,7 @@ export function ExportDialog({ open, onClose, canvas, settings }: ExportDialogPr
 
       {/* Export preview dialog */}
       {previewOpen && (
-        <ExportPreviewDialog open={previewOpen} onClose={() => setPreviewOpen(false)} files={previewFiles} />
+        <ExportPreviewDialog open={previewOpen} onClose={() => setPreviewOpen(false)} files={previewFiles} onDownloadZip={handleDownloadZip} />
       )}
 
       {ghOpen && (
