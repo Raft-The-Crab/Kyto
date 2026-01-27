@@ -1,4 +1,10 @@
 {
+  "python.analysis.extraPaths": ["./backend_py/typings"],
+  "python.analysis.diagnosticSeverityOverrides": {
+    "reportMissingImports": "warning"
+  }
+}
+{
     "editor.formatOnSave": true,
     "editor.defaultFormatter": "esbenp.prettier-vscode",
     "editor.codeActionsOnSave": {

@@ -1,33 +1,44 @@
 {
-  "name": "botify-backend",
+  "name": "kyto-backend",
   "version": "1.0.0",
-  "description": "Cloudflare Workers backend for Botify platform",
+  "description": "Kyto backend API - Cloudflare Workers + D1 + Durable Objects",
   "main": "src/index.ts",
+  "type": "module",
+  "engines": {
+    "node": ">=18.0.0"
+  },
   "scripts": {
     "dev": "wrangler dev",
+    "build": "tsc && wrangler publish --dry-run",
     "deploy": "wrangler deploy",
-    "tail": "wrangler tail",
-    "test": "vitest",
-    "type-check": "tsc --noEmit"
+    "db:create": "wrangler d1 create kyto",
+    "db:migrate": "wrangler d1 execute kyto --file=./src/db/d1-schema.sql",
+    "test": "vitest"
   },
   "keywords": [
-    "cloudflare",
-    "workers",
     "discord",
-    "bot-builder"
+    "bot-builder",
+    "visual-editor",
+    "node-editor"
   ],
   "author": "Jacob",
   "license": "PROPRIETARY",
   "dependencies": {
     "hono": "^4.0.0",
     "@hono/zod-validator": "^0.2.0",
-    "zod": "^3.22.4"
+    "@hono/node-server": "^1.8.0",
+    "zod": "^3.22.4",
+    "node-fetch": "^3.3.2",
+    "pg": "^8.11.0",
+    "ws": "^8.16.0",
+    "acorn": "^8.10.0",
+    "jszip": "^4.0.0"
   },
   "devDependencies": {
-    "@cloudflare/workers-types": "^4.20240712.0",
     "@types/node": "^20.11.0",
+    "@types/ws": "^8.5.10",
+    "tsx": "^4.7.0",
     "typescript": "^5.3.3",
-    "vitest": "^1.2.1",
-    "wrangler": "^3.57.0"
+    "vitest": "^1.2.1"
   }
 }

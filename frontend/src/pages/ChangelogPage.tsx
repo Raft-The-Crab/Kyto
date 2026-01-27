@@ -1,9 +1,35 @@
-import { Link } from 'react-router-dom'
-import { ArrowLeft, Rocket, Zap, MessageSquare, Shield, Star, GitCommit } from 'lucide-react'
+import { Rocket, Zap, MessageSquare, Shield, Star, GitCommit } from 'lucide-react'
 import { Badge } from '@/components/ui/Badge'
+import { NeoLayout } from '@/components/layout/NeoLayout'
 
 export default function ChangelogPage() {
   const changes = [
+    {
+      version: 'v0.6.0',
+      date: 'Jan 25, 2026',
+      title: 'The God Update ⚡',
+      description:
+        'WE LISTENED. The biggest update in Kyto history is here. Massive block library expansion, advanced configuration tools, and a UI that feels smoother than butter.',
+      type: 'major',
+      features: [
+        {
+          icon: Zap,
+          text: '20+ New Blocks: Ban, Kick, Timeout, Role Management, Threads, and Voice Controls.',
+        },
+        {
+          icon: Shield,
+          text: 'Advanced Slash Commands: Build complex commands with Arguments (String, User, Integer) using the new Options Builder.',
+        },
+        {
+          icon: Star,
+          text: 'BotGhost Killer: We are now "free forever" with more features than the paid competition. No locks, no paywalls.',
+        },
+        {
+          icon: MessageSquare,
+          text: 'Embed Builder 2.0: Full control over title, description, colors, authors, and footers.',
+        },
+      ],
+    },
     {
       version: 'v0.5.0',
       date: 'Jan 24, 2026',
@@ -48,28 +74,23 @@ export default function ChangelogPage() {
   ]
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 font-sans text-slate-900 dark:text-slate-100 flex flex-col">
-      {/* Simple Header */}
-      <header className="px-6 py-6 border-b border-slate-200 dark:border-slate-800 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md sticky top-0 z-50">
-        <div className="max-w-4xl mx-auto flex items-center justify-between">
-          <Link
-            to="/dashboard"
-            className="flex items-center gap-2 text-slate-500 hover:text-indigo-600 transition-colors font-bold"
-          >
-            <ArrowLeft className="w-4 h-4" />
-            Back to Dashboard
-          </Link>
-          <div className="flex items-center gap-2">
-            <div className="p-1.5 bg-indigo-600 rounded-lg">
-              <GitCommit className="w-4 h-4 text-white" />
-            </div>
-            <span className="font-black text-lg tracking-tight">Changelog</span>
+    <NeoLayout>
+      <div className="max-w-4xl mx-auto py-12 px-6 animate-in fade-in duration-500">
+        <div className="flex items-center gap-4 mb-12 border-b border-slate-200 dark:border-white/10 pb-8">
+          <div className="p-3 bg-indigo-600 rounded-xl shadow-lg shadow-indigo-500/20">
+            <GitCommit className="w-8 h-8 text-white" />
+          </div>
+          <div>
+            <h1 className="text-4xl font-black text-slate-900 dark:text-white tracking-tight">
+              Changelog
+            </h1>
+            <p className="text-slate-500 dark:text-slate-400 font-medium text-lg">
+              Latest updates and improvements to the platform.
+            </p>
           </div>
         </div>
-      </header>
 
-      <main className="flex-1 py-16 px-6">
-        <div className="max-w-3xl mx-auto space-y-16">
+        <div className="space-y-16">
           {changes.map((release, i) => (
             <div key={release.version} className="relative pl-8 md:pl-0">
               {/* Timeline Line */}
@@ -95,8 +116,12 @@ export default function ChangelogPage() {
                 </div>
 
                 {/* Content */}
-                <div className="flex-1 bg-white dark:bg-slate-900 border-2 border-slate-200 dark:border-slate-800 rounded-2xl p-8 hover:border-indigo-600 dark:hover:border-indigo-500 transition-all shadow-sm">
-                  <h3 className="text-2xl font-bold mb-4">{release.title}</h3>
+                <div className="flex-1 bg-white dark:bg-black border border-slate-200 dark:border-white/10 rounded-3xl p-8 hover:border-indigo-500/50 transition-all shadow-sm hover:shadow-xl relative overflow-hidden group">
+                  <div className="absolute top-0 right-0 p-3 opacity-0 group-hover:opacity-10 transition-opacity bg-indigo-500 blur-2xl rounded-bl-full w-32 h-32" />
+
+                  <h3 className="text-2xl font-bold mb-4 text-slate-900 dark:text-white">
+                    {release.title}
+                  </h3>
                   <p className="text-slate-500 dark:text-slate-400 font-medium leading-relaxed mb-8">
                     {release.description}
                   </p>
@@ -105,9 +130,9 @@ export default function ChangelogPage() {
                     {release.features.map((feature, idx) => (
                       <div
                         key={idx}
-                        className="flex items-start gap-4 p-4 rounded-xl bg-slate-50 dark:bg-slate-800/50"
+                        className="flex items-start gap-4 p-4 rounded-2xl bg-slate-50 dark:bg-white/5 border border-transparent hover:border-slate-200 dark:hover:border-white/10 transition-colors"
                       >
-                        <div className="p-2 bg-white dark:bg-slate-800 rounded-lg shadow-sm">
+                        <div className="p-2 bg-white dark:bg-black rounded-xl shadow-sm border border-slate-100 dark:border-white/10">
                           <feature.icon className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
                         </div>
                         <p className="text-sm font-medium text-slate-700 dark:text-slate-300 pt-1">
@@ -121,11 +146,7 @@ export default function ChangelogPage() {
             </div>
           ))}
         </div>
-      </main>
-
-      <footer className="py-12 text-center text-slate-400 font-bold text-sm border-t border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900">
-        <p>© 2026 Botify Platform. Built for builders.</p>
-      </footer>
-    </div>
+      </div>
+    </NeoLayout>
   )
 }

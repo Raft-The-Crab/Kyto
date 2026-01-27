@@ -9,26 +9,58 @@ export type BlockCategory =
   | 'logic'
   | 'moderation'
   | 'data'
+  | 'events'
+  | 'messages'
+  | 'components'
+  | 'roles'
+  | 'channels'
+  | 'voice'
+  | 'permissions'
 
 export type BlockType =
   // Triggers
   | 'command_slash'
-  | 'command_sub'
+  | 'command_subcommand'
+  | 'command_user'
+  | 'command_message'
+  | 'context_menu_user'
+  | 'context_menu_message'
   | 'event_listener'
+  | 'event_ready'
+  | 'event_message_create'
+  | 'event_message_update'
+  | 'event_message_delete'
+  | 'event_member_join'
+  | 'event_member_leave'
+  | 'event_member_update'
+  | 'event_role_create'
+  | 'event_role_delete'
+  | 'event_role_update'
+  | 'event_channel_create'
+  | 'event_channel_delete'
+  | 'event_channel_update'
+  | 'event_reaction_add'
+  | 'event_reaction_remove'
+  | 'event_button_click'
+  | 'event_select_menu'
+  | 'event_modal_submit'
   | 'on_button_click'
   | 'on_select_menu'
   | 'on_modal_submit'
-  | 'command_user'
-  | 'command_message'
 
   // Logic
   | 'if_condition'
   | 'for_loop'
+  | 'loop'
   | 'wait'
+  | 'random'
   | 'error_handler'
   | 'set_variable'
   | 'get_variable'
   | 'math_operation'
+  | 'console_log'
+  | 'string_manipulation'
+  | 'math_advanced'
 
   // Actions
   | 'send_message'
@@ -39,6 +71,10 @@ export type BlockType =
   | 'add_select_menu'
   | 'show_modal'
   | 'action_reply'
+  | 'defer_reply'
+  | 'edit_reply'
+  | 'follow_up'
+  | 'webhook_send'
 
   // Moderation
   | 'action_role_add'
@@ -46,6 +82,11 @@ export type BlockType =
   | 'action_kick'
   | 'action_ban'
   | 'action_timeout'
+  | 'action_purge'
+  | 'member_timeout'
+  | 'member_add_role'
+  | 'member_remove_role'
+  | 'voice_mute'
 
   // Data & API
   | 'http_request'
@@ -53,11 +94,14 @@ export type BlockType =
   | 'stringify_json'
   | 'database_get'
   | 'database_set'
+  | 'database_store'
+  | 'database_retrieve'
 
   // Advanced & Discord API
   | 'voice_join'
   | 'voice_leave'
   | 'voice_mute'
+  | 'voice_play_audio'
   | 'thread_create'
   | 'thread_join'
   | 'thread_archive'
@@ -70,9 +114,16 @@ export type BlockType =
   | 'invite_create'
   | 'sticker_send'
   | 'emoji_add'
+  | 'create_role'
   | 'role_create'
+  | 'create_channel'
+  | 'delete_channel'
   | 'channel_create'
-  | 'member_timeout'
+  | 'check_permissions'
+  | 'check_bot_permissions'
+  | 'condition_has_role'
+  | 'condition_has_permission'
+  | 'call_module'
 
 export interface BlockConnection {
   id: string
@@ -118,7 +169,17 @@ export interface BlockDefinition {
 export interface BlockProperty {
   key: string
   label: string
-  type: 'text' | 'textarea' | 'select' | 'number' | 'boolean' | 'color' | 'message' | 'options_list'
+  type:
+    | 'text'
+    | 'textarea'
+    | 'select'
+    | 'number'
+    | 'boolean'
+    | 'color'
+    | 'file'
+    | 'message'
+    | 'options_list'
+    | 'module_select'
   required: boolean
   defaultValue?: unknown
   options?: { label: string; value: string }[]
@@ -176,6 +237,13 @@ export interface Module {
   updatedAt: number
 }
 
+export interface GlobalVariable {
+  id: string
+  name: string
+  type: 'string' | 'number' | 'boolean' | 'secret'
+  value: string
+}
+
 export interface Project {
   id: string
   name: string
@@ -185,6 +253,7 @@ export interface Project {
   commands: Command[]
   events: EventListener[]
   modules: Module[]
+  variables: GlobalVariable[]
   settings: ProjectSettings
   createdAt: number
   updatedAt: number
@@ -196,4 +265,33 @@ export interface ProjectSettings {
   intents: string[]
   permissions: string[]
   prefix?: string
+}
+
+export type FileType = 'file' | 'folder'
+
+export interface FileNode {
+  id: string
+  name: string
+  type: FileType
+  content?: string
+  parentId: string | null
+  children?: string[] // IDs of children
+  isExpanded?: boolean
+}
+
+export interface Project {
+  id: string
+  name: string
+  description: string
+  language: 'discord.js' | 'discord.py'
+  version: string
+  commands: Command[]
+  events: EventListener[]
+  modules: Module[]
+  variables: GlobalVariable[]
+  settings: ProjectSettings
+  files: Record<string, FileNode> // Virtual File System
+  rootFolderId: string
+  createdAt: number
+  updatedAt: number
 }

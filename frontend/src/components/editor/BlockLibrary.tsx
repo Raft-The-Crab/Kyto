@@ -1,15 +1,17 @@
 import { useState } from 'react'
-import { Search, GripVertical, Box } from 'lucide-react'
-import { BLOCK_DEFINITIONS, BLOCK_CATEGORIES } from '@/lib/blocks/definitions'
+import { Search, GripVertical, Box, X, Layers } from 'lucide-react'
+import { BLOCK_DEFINITIONS } from '@/lib/blocks/definitions'
+import { BLOCK_CATEGORIES } from '@/lib/blocks/categories-export'
 import { BlockType, BlockCategory } from '@/types'
 import * as Icons from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 interface BlockLibraryProps {
   onBlockDragStart: (type: BlockType) => void
+  mode: 'command' | 'event' | 'module'
 }
 
-export function BlockLibrary({ onBlockDragStart }: BlockLibraryProps) {
+export function BlockLibrary({ onBlockDragStart, mode }: BlockLibraryProps) {
   const [searchQuery, setSearchQuery] = useState('')
   const [activeCategory, setActiveCategory] = useState<BlockCategory | 'all'>('all')
 
@@ -20,73 +22,75 @@ export function BlockLibrary({ onBlockDragStart }: BlockLibraryProps) {
 
     const matchesCategory = activeCategory === 'all' || block.category === activeCategory
 
+    if (mode === 'event' && (block.type === 'command_slash' || block.type === 'command_subcommand'))
+      return false
+    if (mode === 'command' && block.type === 'event_listener') return false
+
     return matchesSearch && matchesCategory
   })
 
   return (
-    <div className="h-full flex flex-col bg-white dark:bg-slate-950 overflow-hidden transition-colors border-r dark:border-slate-800">
-      {/* Sidebar Header */}
-      <div className="p-5 border-b-2 border-black/10 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50">
-        <h2 className="text-xl font-black text-slate-900 dark:text-white mb-4 flex items-center gap-2 uppercase tracking-tight">
-          Library
-          <span className="text-[10px] bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-400 px-2 py-1 rounded-lg font-black uppercase tracking-widest border border-black/10">
+    <div className="h-full flex flex-col bg-[#0b0b0e] border-r border-white/5 font-sans">
+      {/* Header */}
+      <div className="px-5 py-4 border-b border-white/5 bg-[#0b0b0e]/80 backdrop-blur-sm sticky top-0 z-10">
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-sm font-bold text-white flex items-center gap-2 tracking-wide">
+            <Layers className="w-4 h-4 text-indigo-500" />
+            Library
+          </h2>
+          <span className="text-[10px] font-bold text-slate-400 bg-white/5 px-2 py-0.5 rounded-full border border-white/5">
             {Object.keys(BLOCK_DEFINITIONS).length}
           </span>
-        </h2>
+        </div>
 
         <div className="relative group">
-          <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 group-focus-within:text-indigo-600 transition-colors" />
+          <Search className="w-3.5 h-3.5 text-slate-500 absolute left-3 top-1/2 -translate-y-1/2 group-focus-within:text-indigo-400 transition-colors" />
           <input
             type="text"
-            placeholder="Filter components..."
+            placeholder="Search components..."
             value={searchQuery}
             onChange={e => setSearchQuery(e.target.value)}
-            className="w-full pl-10 pr-10 py-3 bg-white dark:bg-slate-900 border-2 border-black/10 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white text-xs font-black placeholder:text-slate-400 focus:outline-none focus:border-indigo-600 focus:-translate-y-px transition-all shadow-neo-sm"
+            className="w-full pl-9 pr-8 py-2.5 bg-black/20 border border-white/5 rounded-xl text-xs font-medium text-white placeholder:text-slate-600 focus:outline-none focus:border-indigo-500/50 focus:bg-black/40 transition-all"
           />
           {searchQuery && (
             <button
               onClick={() => setSearchQuery('')}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-white transition-colors"
+              className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-500 hover:text-white transition-colors"
             >
-              <Icons.X className="w-4 h-4" />
+              <X className="w-3 h-3" />
             </button>
           )}
         </div>
       </div>
 
       {/* Categories */}
-      <div className="flex gap-2 px-5 py-3 border-b-2 border-slate-900 dark:border-slate-800 overflow-x-auto no-scrollbar bg-white dark:bg-slate-950">
+      <div className="flex gap-2 px-5 py-3 border-b border-white/5 overflow-x-auto no-scrollbar shrink-0">
         <CategoryButton
           active={activeCategory === 'all'}
           onClick={() => setActiveCategory('all')}
           label="All"
         />
-        {Object.entries(BLOCK_CATEGORIES).map(([key, { label }]) => (
+        {BLOCK_CATEGORIES.map(({ id, label }) => (
           <CategoryButton
-            key={key}
-            active={activeCategory === key}
-            onClick={() => setActiveCategory(key as BlockCategory)}
+            key={id}
+            active={activeCategory === id}
+            onClick={() => setActiveCategory(id as BlockCategory)}
             label={label}
           />
         ))}
       </div>
 
       {/* Blocks List */}
-      <div className="flex-1 overflow-y-auto p-5 space-y-4 no-scrollbar pb-24">
+      <div className="flex-1 overflow-y-auto p-4 space-y-3 custom-scrollbar">
         {filteredBlocks.length === 0 ? (
-          <div className="text-center py-10 opacity-50 flex flex-col items-center">
-            <Box className="w-8 h-8 text-slate-400 mb-2" />
-            <p className="font-black text-slate-900 dark:text-white uppercase text-[10px] tracking-widest">
-              No results found
-            </p>
+          <div className="text-center py-12 flex flex-col items-center opacity-40">
+            <Box className="w-10 h-10 text-slate-500 mb-3" />
+            <p className="text-xs font-medium text-slate-500">No components found</p>
           </div>
         ) : (
           filteredBlocks.map(block => {
             const IconComponent = (Icons[block.icon as keyof typeof Icons] ||
-              Icons.Box) as React.ComponentType<{
-              className?: string
-              style?: React.CSSProperties
-            }>
+              Icons.Box) as React.ComponentType<{ className?: string; style?: any }>
 
             return (
               <div
@@ -97,35 +101,30 @@ export function BlockLibrary({ onBlockDragStart }: BlockLibraryProps) {
                   e.dataTransfer.effectAllowed = 'move'
                   onBlockDragStart(block.type)
                 }}
-                className="group bg-white dark:bg-slate-900 border-2 border-black/10 dark:border-slate-700 hover:border-indigo-600 dark:hover:border-indigo-500 rounded-2xl p-4 cursor-grab active:cursor-grabbing transition-all hover:shadow-neo-sm hover:translate-y-[-2px] relative overflow-hidden"
+                className="group relative bg-[#121215] border border-white/5 rounded-xl p-3 cursor-grab active:cursor-grabbing hover:border-indigo-500/30 hover:bg-white/5 transition-all hover:shadow-lg hover:-translate-y-0.5 overflow-hidden"
               >
-                {/* Visual Accent */}
+                {/* Side Accent */}
                 <div
-                  className="absolute top-0 left-0 w-1.5 h-full opacity-100 shadow-[2px_0_8px_rgba(0,0,0,0.1)]"
+                  className="absolute left-0 top-0 bottom-0 w-1 opacity-0 group-hover:opacity-100 transition-opacity"
                   style={{ backgroundColor: block.color }}
                 />
 
-                <div className="flex items-start gap-4">
+                <div className="flex items-start gap-3">
                   <div
-                    className="p-2.5 rounded-xl shrink-0 border-2 border-black/10 dark:border-slate-800 shadow-neo-sm"
-                    style={{ backgroundColor: `${block.color}15` }}
+                    className="p-2 rounded-lg shrink-0 border border-white/5 shadow-inner bg-black/20"
+                    style={{ color: block.color }}
                   >
-                    {IconComponent && (
-                      <IconComponent
-                        className="w-5 h-5 transition-transform group-hover:scale-110"
-                        style={{ color: block.color }}
-                      />
-                    )}
+                    {IconComponent && <IconComponent className="w-4 h-4" />}
                   </div>
 
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center justify-between gap-2 mb-1">
-                      <h3 className="text-slate-900 dark:text-white font-black text-sm truncate tracking-tight">
+                  <div className="flex-1 min-w-0 py-0.5">
+                    <div className="flex items-center justify-between gap-2">
+                      <h3 className="text-slate-200 font-bold text-xs truncate group-hover:text-white transition-colors">
                         {block.label}
                       </h3>
-                      <GripVertical className="w-4 h-4 text-slate-300 dark:text-slate-700 group-hover:text-indigo-400" />
+                      <GripVertical className="w-3.5 h-3.5 text-slate-600 opacity-0 group-hover:opacity-100 transition-opacity" />
                     </div>
-                    <p className="text-slate-600 dark:text-slate-400 text-[10px] font-bold leading-relaxed line-clamp-2 uppercase tracking-wide">
+                    <p className="text-slate-500 text-[10px] leading-tight line-clamp-2 mt-0.5 font-medium group-hover:text-slate-400 transition-colors">
                       {block.description}
                     </p>
                   </div>
@@ -152,10 +151,10 @@ function CategoryButton({
     <button
       onClick={onClick}
       className={cn(
-        'px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest whitespace-nowrap transition-all border-2',
+        'px-3 py-1.5 rounded-full text-[10px] font-bold transition-all border whitespace-nowrap',
         active
-          ? 'bg-slate-900 dark:bg-white text-white dark:text-slate-900 border-slate-900 shadow-neo-sm'
-          : 'bg-white dark:bg-slate-900 text-slate-500 border-slate-200 dark:border-slate-800 hover:border-slate-400'
+          ? 'bg-slate-900 dark:bg-white text-white dark:text-black border-slate-900 dark:border-white'
+          : 'bg-transparent text-slate-500 dark:text-slate-400 border-slate-200 dark:border-white/10 hover:border-slate-300 dark:hover:border-white/20 hover:bg-slate-50 dark:hover:bg-white/5'
       )}
     >
       {label}

@@ -1,10 +1,49 @@
 import { Hono } from "hono";
 import { zValidator } from "@hono/zod-validator";
 import { z } from "zod";
-import type { Env } from "../index";
 import type { Project } from "../types";
+import { Pool } from "pg";
 
-export const projectRoutes = new Hono<{ Bindings: Env }>();
+// Initialize Postgres pool if DATABASE_URL provided (Railway)
+const DATABASE_URL = process.env.DATABASE_URL;
+let pgPool: Pool | null = null;
+if (DATABASE_URL) {
+  pgPool = new Pool({ connectionString: DATABASE_URL });
+}
+
+export const projectRoutes = new Hono();
+
+// In-memory storage fallback
+const projects = new Map<string, Project>();
+
+async function dbGetProjectsForUser(userId: string): Promise<Project[]> {
+  if (!pgPool) return [];
+  const res = await pgPool.query('SELECT project FROM projects WHERE user_id = $1', [userId]);
+  return res.rows.map((r: any) => r.project as Project);
+}
+
+async function dbGetProject(userId: string, projectId: string): Promise<Project | null> {
+  if (!pgPool) return null;
+  const res = await pgPool.query('SELECT project FROM projects WHERE user_id = $1 AND id = $2', [userId, projectId]);
+  if (res.rowCount === 0) return null;
+  return res.rows[0].project as Project;
+}
+
+async function dbUpsertProject(userId: string, project: Project) {
+  if (!pgPool) return;
+  await pgPool.query(
+    `INSERT INTO projects (id, user_id, project, created_at, updated_at)
+     VALUES ($1, $2, $3, $4, $5)
+     ON CONFLICT (id) DO UPDATE SET project = EXCLUDED.project, updated_at = EXCLUDED.updated_at;
+    `,
+    [project.id, userId, project, project.createdAt, project.updatedAt],
+  );
+}
+
+async function dbDeleteProject(userId: string, projectId: string) {
+  if (!pgPool) return;
+  await pgPool.query('DELETE FROM projects WHERE user_id = $1 AND id = $2', [userId, projectId]);
+}
 
 // Validation schemas
 const projectSchema = z.object({
@@ -30,17 +69,19 @@ const projectSchema = z.object({
 projectRoutes.get("/", async (c) => {
   try {
     const userId = c.req.header("X-User-ID") || "default";
-    const projectsList = await c.env.PROJECTS_KV.list({
-      prefix: `user:${userId}:`,
-    });
-
-    const projects: Project[] = [];
-    for (const key of projectsList.keys) {
-      const project = await c.env.PROJECTS_KV.get(key.name, "json");
-      if (project) projects.push(project as Project);
+    if (pgPool) {
+      const dbProjects = await dbGetProjectsForUser(userId);
+      return c.json({ projects: dbProjects });
     }
 
-    return c.json({ projects });
+    const userProjects: Project[] = [];
+    for (const [key, project] of projects.entries()) {
+      if (key.startsWith(`user:${userId}:`)) {
+        userProjects.push(project);
+      }
+    }
+
+    return c.json({ projects: userProjects });
   } catch (error) {
     return c.json({ error: "Failed to list projects" }, 500);
   }
@@ -52,8 +93,13 @@ projectRoutes.get("/:id", async (c) => {
     const projectId = c.req.param("id");
     const userId = c.req.header("X-User-ID") || "default";
     const key = `user:${userId}:project:${projectId}`;
+    if (pgPool) {
+      const project = await dbGetProject(userId, projectId);
+      if (!project) return c.json({ error: "Project not found" }, 404);
+      return c.json({ project });
+    }
 
-    const project = await c.env.PROJECTS_KV.get(key, "json");
+    const project = projects.get(key);
 
     if (!project) {
       return c.json({ error: "Project not found" }, 404);
@@ -82,7 +128,12 @@ projectRoutes.post("/", zValidator("json", projectSchema), async (c) => {
       updatedAt: Date.now(),
     } as Project;
 
-    await c.env.PROJECTS_KV.put(key, JSON.stringify(project));
+    if (pgPool) {
+      await dbUpsertProject(userId, project);
+      return c.json({ project });
+    }
+
+    projects.set(key, project);
 
     return c.json({ project });
   } catch (error) {
@@ -97,7 +148,12 @@ projectRoutes.delete("/:id", async (c) => {
     const userId = c.req.header("X-User-ID") || "default";
     const key = `user:${userId}:project:${projectId}`;
 
-    await c.env.PROJECTS_KV.delete(key);
+    if (pgPool) {
+      await dbDeleteProject(userId, projectId);
+      return c.json({ success: true });
+    }
+
+    projects.delete(key);
 
     return c.json({ success: true });
   } catch (error) {

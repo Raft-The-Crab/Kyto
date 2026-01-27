@@ -32,7 +32,7 @@ export default function PrivacyPolicyPage() {
                 Introduction
               </h2>
               <p className="text-slate-600 font-medium leading-relaxed">
-                At Botify, we take your privacy seriously. This policy describes how we collect,
+                At Kyto, we take your privacy seriously. This policy describes how we collect,
                 use, and protect your personal information when you use our platform.
               </p>
             </section>
@@ -70,7 +70,7 @@ export default function PrivacyPolicyPage() {
                 <h3 className="text-3xl font-black text-slate-900 mb-6">Contact Us</h3>
                 <div className="flex items-center gap-4 text-slate-900 font-bold text-xl">
                   <Mail className="w-8 h-8 text-indigo-600" />
-                  privacy@botify.so
+                  privacy@kyto.app
                 </div>
               </div>
             </section>

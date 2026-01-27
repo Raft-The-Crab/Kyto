@@ -11,6 +11,8 @@ import {
   Box,
   Layers,
   Settings,
+  Database,
+  Zap,
 } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { BlockLibrary } from '@/components/editor/BlockLibrary'
@@ -26,10 +28,12 @@ import { toast } from 'sonner'
 import { AIHelper } from '@/components/editor/AIHelper'
 import { DiscordPreview } from '@/components/editor/DiscordPreview'
 import { FileExplorer } from '@/components/editor/FileExplorer'
+import { VariableManager } from '@/components/editor/VariableManager'
+import { generateCode } from '@/engine/codeGenerator'
 
 type ViewMode = 'visual' | 'code'
 type LeftTab = 'blocks' | 'explorer' | 'terminal'
-type RightTab = 'properties' | 'preview'
+type RightTab = 'properties' | 'preview' | 'analytics'
 
 export default function UniversalBuilderPage() {
   const { id } = useParams()
@@ -44,9 +48,8 @@ export default function UniversalBuilderPage() {
   const [rightTab, setRightTab] = useState<RightTab>('properties')
 
   const [logs, setLogs] = useState<{ t: string; m: string; c?: string }[]>([
-    { t: 'SYS', m: 'Core engine initialized.', c: 'text-slate-400' },
-    { t: 'INFO', m: 'Filesystem mounted.', c: 'text-slate-400' },
-    { t: 'INFO', m: 'Transpiler active.', c: 'text-slate-400' },
+    { t: 'SYS', m: 'Core engine initialized.', c: 'text-zinc-500' },
+    { t: 'INFO', m: 'Filesystem mounted.', c: 'text-zinc-500' },
   ])
 
   const { getCommand, getEvent, getModule, updateCommand, updateEvent, updateModule, language } =
@@ -85,7 +88,7 @@ export default function UniversalBuilderPage() {
       addLog(
         `${isModule ? 'Module' : isEvent ? 'Event' : 'Command'} synchronization complete.`,
         'SYNC',
-        'text-emerald-400'
+        'text-emerald-500'
       )
     } else if (id && !entity) {
       navigate('/dashboard')
@@ -105,10 +108,11 @@ export default function UniversalBuilderPage() {
         else updateCommand(id, { canvas })
 
         setSaveStatus('saved')
-        addLog(`IDE: Logic saved locally.`, 'STORE', 'text-slate-400')
+        addLog(`IDE: Logic saved locally.`, 'STORE', 'text-zinc-500')
       }, 1000)
       return () => clearTimeout(timer)
     }
+    return undefined
   }, [
     blocks,
     connections,
@@ -123,146 +127,180 @@ export default function UniversalBuilderPage() {
   ])
 
   const handleDeploy = () => {
-    addLog('Initiating deployment sequence...', 'DEPLOY', 'text-amber-400')
-    setTimeout(() => addLog('Transpiling visual logic to target source...', 'INFO'), 600)
-    setTimeout(() => addLog('Packaging assets and dependencies...', 'INFO'), 1200)
+    addLog('Packaging source code...', 'BUILD', 'text-amber-500')
+
+    // Generate Source
+    const sourceCode = generateCode(blocks, connections, language as 'discord.js' | 'discord.py')
+    const fileName = language === 'discord.js' ? 'index.js' : 'main.py'
+
+    // Create Blob
+    const blob = new Blob([sourceCode], { type: 'text/plain' })
+    const url = URL.createObjectURL(blob)
+
+    // Download Main File
+    const a = document.createElement('a')
+    a.href = url
+    a.download = fileName
+    document.body.appendChild(a)
+    a.click()
+    document.body.removeChild(a)
+    URL.revokeObjectURL(url)
+
+    // Download Config
     setTimeout(() => {
-      addLog(
-        `SUCCESS: ${entity?.name || 'Resource'} pushed to gateway.`,
-        'SYNC',
-        'text-emerald-400'
-      )
-      toast.success('Production deployment completed.')
-    }, 2000)
+      const configName = language === 'discord.js' ? 'package.json' : 'requirements.txt'
+      // Minimal config generation
+      const configContent =
+        language === 'discord.js'
+          ? JSON.stringify(
+              {
+                name: (entity?.name || 'bot').toLowerCase(),
+                dependencies: { 'discord.js': '^14.11.0', dotenv: '^16.0.3' },
+              },
+              null,
+              2
+            )
+          : 'discord.py==2.3.2\npython-dotenv==1.0.0'
+
+      const configBlob = new Blob([configContent], { type: 'text/plain' })
+      const configUrl = URL.createObjectURL(configBlob)
+      const ca = document.createElement('a')
+      ca.href = configUrl
+      ca.download = configName
+      document.body.appendChild(ca)
+      ca.click()
+      document.body.removeChild(ca)
+      URL.revokeObjectURL(configUrl)
+
+      addLog(`SUCCESS: ${fileName} and ${configName} downloaded.`, 'EXPORT', 'text-emerald-500')
+      toast.success('Project source downloaded.')
+    }, 500)
   }
 
   return (
-    <div className="h-screen bg-slate-50 dark:bg-slate-950 flex flex-col font-sans overflow-hidden transition-colors duration-500">
-      <header className="bg-white dark:bg-slate-950 border-b-2 border-black/10 dark:border-slate-800 px-6 py-3 shrink-0 z-20 relative text-black dark:text-white font-bold">
-        <div className="flex items-center justify-between relative z-10">
-          <div className="flex items-center gap-6">
-            <Link to={isModule ? '/modules' : isEvent ? '/events' : '/commands'}>
-              <Button
-                variant="outline"
-                size="icon"
-                className="rounded-xl border-2 border-black/10 dark:border-slate-800 shadow-neo-sm hover:translate-y-[-2px] transition-all bg-white dark:bg-slate-900"
-              >
-                <ArrowLeft className="w-5 h-5 text-slate-900 dark:text-white" />
-              </Button>
-            </Link>
+    <div className="h-screen bg-[#09090b] text-white flex flex-col font-sans overflow-hidden">
+      {/* PROFESSIONAL BUILDER HEADER */}
+      <header className="h-14 bg-[#09090b] border-b border-white/10 flex items-center justify-between px-4 shrink-0 relative z-50">
+        <div className="flex items-center gap-4">
+          <Link to={isModule ? '/modules' : isEvent ? '/events' : '/commands'}>
+            <div className="p-2 hover:bg-white/10 rounded-lg transition-colors cursor-pointer">
+              <ArrowLeft className="w-5 h-5 text-zinc-400 hover:text-white" />
+            </div>
+          </Link>
 
-            <div className="flex items-center gap-4">
-              <div className="w-10 h-10 bg-black dark:bg-white border-2 border-black/10 dark:border-slate-100 rounded-xl flex items-center justify-center shadow-neo-sm">
-                {isModule ? (
-                  <Layers className="w-5 h-5 text-white dark:text-black" />
-                ) : (
-                  <Box className="w-5 h-5 text-white dark:text-black" />
-                )}
-              </div>
-              <div>
-                <div className="flex items-center gap-1.5 overflow-hidden">
-                  <Link
-                    to={isModule ? '/modules' : isEvent ? '/events' : '/commands'}
-                    className="text-[10px] font-black text-slate-400 hover:text-indigo-600 transition-colors uppercase tracking-widest whitespace-nowrap"
-                  >
-                    Resources
-                  </Link>
-                  <span className="text-slate-300 dark:text-slate-700 text-xs">/</span>
-                  <div className="flex items-center gap-2 min-w-0">
-                    <h1 className="text-sm font-black tracking-tight leading-none uppercase text-slate-900 dark:text-white truncate">
-                      {entity?.name || 'Workspace'}
-                    </h1>
-                    <span
-                      className={cn(
-                        'text-[8px] font-black px-1.5 py-0.5 rounded border border-black/10 dark:border-white/10 transition-all uppercase tracking-widest shrink-0',
-                        saveStatus === 'saved'
-                          ? 'bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400'
-                          : 'bg-amber-400 text-black animate-pulse'
-                      )}
-                    >
-                      {saveStatus === 'saved' ? 'SYNCED' : 'SAVING'}
-                    </span>
-                  </div>
-                </div>
-                <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest opacity-60 mt-0.5">
-                  {language} • {isModule ? 'Module' : isEvent ? 'Event' : 'Command'}
-                </p>
+          <div className="h-6 w-px bg-white/10 mx-2" />
+
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 rounded-lg bg-linear-to-br from-indigo-500 to-violet-600 flex items-center justify-center shadow-lg shadow-indigo-500/20">
+              {isModule ? (
+                <Layers className="w-4 h-4 text-white" />
+              ) : isEvent ? (
+                <Zap className="w-4 h-4 text-white" />
+              ) : (
+                <Box className="w-4 h-4 text-white" />
+              )}
+            </div>
+            <div>
+              <h1 className="text-sm font-bold leading-none text-white tracking-tight">
+                {entity?.name || 'Untitled Logic'}
+              </h1>
+              <div className="flex items-center gap-2 mt-1">
+                <span className="text-[10px] font-medium text-zinc-500 uppercase tracking-wider">
+                  {language === 'discord.js' ? 'TypeScript' : 'Python'}
+                </span>
+                <span className="w-1 h-1 rounded-full bg-zinc-700" />
+                <span
+                  className={cn(
+                    'text-[10px] font-medium uppercase tracking-wider',
+                    saveStatus === 'saved' ? 'text-emerald-500' : 'text-amber-500'
+                  )}
+                >
+                  {saveStatus === 'saved' ? 'Synced' : 'Saving...'}
+                </span>
               </div>
             </div>
           </div>
+        </div>
 
-          <div className="flex items-center gap-6">
-            <div className="flex bg-slate-100 dark:bg-slate-900 p-1 rounded-xl border-2 border-black/10 dark:border-slate-800 shadow-neo-sm">
-              <button
-                onClick={() => setViewMode('visual')}
-                className={cn(
-                  'px-6 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest flex items-center gap-2 transition-all',
-                  viewMode === 'visual'
-                    ? 'bg-slate-900 dark:bg-white text-white dark:text-slate-900 shadow-sm border border-black/10 dark:border-white/10'
-                    : 'text-slate-500 hover:text-slate-900 dark:hover:text-white'
-                )}
-              >
-                <LayoutTemplate className="w-3.5 h-3.5" /> Designer
-              </button>
-              <button
-                onClick={() => setViewMode('code')}
-                className={cn(
-                  'px-6 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest flex items-center gap-2 transition-all',
-                  viewMode === 'code'
-                    ? 'bg-slate-900 dark:bg-white text-white dark:text-slate-900 shadow-sm border border-black/10 dark:border-white/10'
-                    : 'text-slate-500 hover:text-slate-900 dark:hover:text-white'
-                )}
-              >
-                <Code2 className="w-3.5 h-3.5" /> Source
-              </button>
-            </div>
-
-            <div className="h-8 w-px bg-slate-200 dark:bg-slate-800" />
-
-            <Button
-              size="sm"
-              className="gap-2 shadow-neo-sm font-black text-[10px] border-2 border-black/10 dark:border-slate-800 uppercase tracking-widest px-6 bg-indigo-600 hover:bg-indigo-700 text-white"
-              onClick={handleDeploy}
+        <div className="flex items-center gap-4">
+          {/* View Mode Toggle */}
+          <div className="bg-white/5 p-1 rounded-lg border border-white/5 flex items-center">
+            <button
+              onClick={() => setViewMode('visual')}
+              className={cn(
+                'px-3 py-1.5 rounded-md text-[11px] font-bold uppercase tracking-wider transition-all flex items-center gap-2',
+                viewMode === 'visual'
+                  ? 'bg-white/10 text-white shadow-sm'
+                  : 'text-zinc-500 hover:text-zinc-300'
+              )}
             >
-              <ShieldCheck className="w-3.5 h-3.5" /> Deploy Logic
-            </Button>
+              <LayoutTemplate className="w-3.5 h-3.5" /> Canvas
+            </button>
+            <button
+              onClick={() => setViewMode('code')}
+              className={cn(
+                'px-3 py-1.5 rounded-md text-[11px] font-bold uppercase tracking-wider transition-all flex items-center gap-2',
+                viewMode === 'code'
+                  ? 'bg-white/10 text-white shadow-sm'
+                  : 'text-zinc-500 hover:text-zinc-300'
+              )}
+            >
+              <Code2 className="w-3.5 h-3.5" /> Code
+            </button>
           </div>
+
+          <Button
+            size="sm"
+            onClick={handleDeploy}
+            className="bg-indigo-600 hover:bg-indigo-500 text-white font-bold h-9 px-4 rounded-lg shadow-lg shadow-indigo-500/20 border border-indigo-400/20 transition-all hover:-translate-y-0.5"
+          >
+            <ShieldCheck className="w-4 h-4 mr-2" />
+            Export Logic
+          </Button>
         </div>
       </header>
 
+      {/* MAIN WORKSPACE */}
       <div className="flex-1 flex overflow-hidden">
-        <aside className="w-80 border-r-2 border-black/10 dark:border-slate-800 bg-white dark:bg-slate-950 z-10 flex flex-col transition-all">
-          <div className="flex border-b-2 border-black/10 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 text-slate-900 dark:text-white font-bold">
-            <TabButton
-              active={leftTab === 'explorer'}
-              icon={Files}
-              onClick={() => setLeftTab('explorer')}
-              label="Assets"
-            />
+        {/* LEFT SIDEBAR (Library) */}
+        <aside className="w-72 bg-[#09090b] border-r border-white/10 flex flex-col z-20">
+          <div className="flex border-b border-white/10 bg-black/20">
             <TabButton
               active={leftTab === 'blocks'}
               icon={LayoutTemplate}
               onClick={() => setLeftTab('blocks')}
-              label="Library"
+              label="Blocks"
+            />
+            <TabButton
+              active={leftTab === 'explorer'}
+              icon={Files}
+              onClick={() => setLeftTab('explorer')}
+              label="Files"
             />
             <TabButton
               active={leftTab === 'terminal'}
               icon={TerminalIcon}
               onClick={() => setLeftTab('terminal')}
-              label="Gateway"
+              label="Logs"
             />
           </div>
-          <div className="flex-1 overflow-hidden bg-white dark:bg-slate-950">
+
+          <div className="flex-1 overflow-hidden relative">
             {leftTab === 'explorer' && <FileExplorer />}
-            {leftTab === 'blocks' && <BlockLibrary onBlockDragStart={setDraggedBlockType} />}
+            {leftTab === 'blocks' && (
+              <BlockLibrary
+                onBlockDragStart={setDraggedBlockType}
+                mode={isModule ? 'module' : isEvent ? 'event' : 'command'}
+              />
+            )}
             {leftTab === 'terminal' && (
-              <div className="p-4 font-mono text-[10px] bg-slate-50 dark:bg-slate-950 h-full overflow-y-auto custom-scrollbar text-slate-600 dark:text-slate-400">
-                <div className="flex items-center gap-2 text-slate-400 dark:text-slate-600 mb-4 border-b border-black/10 dark:border-slate-800 pb-2 uppercase tracking-widest font-black">
-                  <TerminalIcon className="w-3 h-3" /> Console
+              <div className="p-4 font-mono text-[10px] h-full overflow-y-auto custom-scrollbar">
+                <div className="flex items-center gap-2 text-zinc-500 mb-4 border-b border-white/10 pb-2 uppercase tracking-widest font-bold">
+                  <TerminalIcon className="w-3 h-3" /> Console Output
                 </div>
                 {logs.map((L, i) => (
-                  <div key={i} className="mb-1 leading-relaxed">
-                    <span className="text-slate-400 dark:text-slate-600">[{L.t}]</span>{' '}
+                  <div key={i} className="mb-1.5 leading-relaxed font-medium">
+                    <span className="text-zinc-600">[{L.t}]</span>{' '}
                     <span className={cn(L.c)}>{L.m}</span>
                   </div>
                 ))}
@@ -271,9 +309,11 @@ export default function UniversalBuilderPage() {
           </div>
         </aside>
 
-        <main className="flex-1 relative bg-white dark:bg-[#0c0c14] overflow-hidden transition-colors">
+        {/* CENTER CANVAS */}
+        <main className="flex-1 relative bg-[#0c0c0e] overflow-hidden">
           {viewMode === 'visual' ? (
             <div className="h-full w-full relative">
+              <div className="absolute inset-0 bg-[radial-gradient(#ffffff_1px,transparent_1px)] bg-size-[24px_24px] opacity-[0.03] pointer-events-none" />
               <EditorCanvas
                 entityId={id || 'new'}
                 onBlockDragStart={setDraggedBlockType}
@@ -290,36 +330,44 @@ export default function UniversalBuilderPage() {
           )}
         </main>
 
-        <aside className="w-80 border-l-2 border-black/10 dark:border-slate-800 bg-white dark:bg-slate-950 z-10 flex flex-col transition-all">
-          <div className="flex border-b-2 border-black/10 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 text-slate-900 dark:text-white font-bold">
+        {/* RIGHT SIDEBAR (Inspector) */}
+        <aside className="w-80 bg-[#09090b] border-l border-white/10 flex flex-col z-20">
+          <div className="flex border-b border-white/10 bg-black/20">
             <TabButton
               active={rightTab === 'properties'}
               icon={Settings}
               onClick={() => setRightTab('properties')}
-              label="Configure"
+              label="Config"
             />
             <TabButton
               active={rightTab === 'preview'}
               icon={MonitorPlay}
               onClick={() => setRightTab('preview')}
-              label="Simulator"
+              label="Simulate"
+            />
+            <TabButton
+              active={rightTab === 'analytics'}
+              icon={Database}
+              onClick={() => setRightTab('analytics')}
+              label="Variables"
             />
           </div>
-          <div className="flex-1 overflow-hidden bg-white dark:bg-slate-950">
-            {rightTab === 'properties' ? (
-              <PropertiesPanel />
-            ) : (
-              <div className="h-full flex flex-col bg-slate-50 dark:bg-slate-900/30">
-                <div className="p-4 bg-white dark:bg-slate-950 border-b-2 border-black/10 dark:border-slate-800">
-                  <h3 className="text-[10px] font-black uppercase tracking-widest flex items-center gap-2 text-slate-900 dark:text-white">
-                    <MonitorPlay className="w-3.5 h-3.5 text-indigo-500" /> Real-time Preview
+
+          <div className="flex-1 overflow-hidden flex flex-col bg-[#09090b]">
+            {rightTab === 'properties' && <PropertiesPanel />}
+            {rightTab === 'preview' && (
+              <div className="h-full flex flex-col">
+                <div className="p-3 bg-white/5 border-b border-white/10">
+                  <h3 className="text-[10px] font-black uppercase tracking-widest flex items-center gap-2 text-white/70">
+                    <MonitorPlay className="w-3.5 h-3.5 text-emerald-500" /> Live Prevention
                   </h3>
                 </div>
-                <div className="flex-1 p-5 overflow-y-auto no-scrollbar">
+                <div className="flex-1 p-4 overflow-y-auto custom-scrollbar bg-black/20">
                   <DiscordPreview content={`Testing endpoint: /${entity?.name || 'logic'}`} />
                 </div>
               </div>
             )}
+            {rightTab === 'analytics' && <VariableManager />}
           </div>
         </aside>
       </div>
@@ -342,23 +390,14 @@ function TabButton({
     <button
       onClick={onClick}
       className={cn(
-        'flex-1 py-4 flex flex-col items-center justify-center gap-1 transition-all border-r border-black/10 dark:border-slate-800 last:border-0 relative group p-1',
-        active
-          ? 'bg-white dark:bg-slate-950 text-indigo-600'
-          : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-300'
+        'flex-1 py-3 flex items-center justify-center gap-2 transition-all border-r border-white/5 last:border-0 relative group hover:bg-white/5',
+        active ? 'text-white bg-white/5' : 'text-zinc-500 hover:text-zinc-300'
       )}
     >
-      <Icon className={cn('w-4 h-4', active && 'stroke-[3px]')} />
-      <span
-        className={cn(
-          'text-[7px] font-black uppercase tracking-widest',
-          active ? 'opacity-100' : 'opacity-60'
-        )}
-      >
-        {label}
-      </span>
+      <Icon className={cn('w-4 h-4', active && 'text-indigo-400')} />
+      <span className="text-[10px] font-bold uppercase tracking-wider">{label}</span>
       {active && (
-        <div className="absolute bottom-0 left-2 right-2 h-0.5 bg-indigo-600 shadow-[0_-2px_8px_rgba(79,70,229,0.5)]" />
+        <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-indigo-500 shadow-[0_-2px_6px_rgba(99,102,241,0.5)]" />
       )}
     </button>
   )

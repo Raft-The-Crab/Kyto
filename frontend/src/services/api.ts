@@ -13,10 +13,10 @@ class ApiClient {
   }
 
   private getUserId(): string {
-    let userId = localStorage.getItem('botify_user_id')
+    let userId = localStorage.getItem('kyto_user_id')
     if (!userId) {
       userId = crypto.randomUUID()
-      localStorage.setItem('botify_user_id', userId)
+      localStorage.setItem('kyto_user_id', userId)
     }
     return userId
   }
@@ -81,6 +81,39 @@ class ApiClient {
       method: 'POST',
       body: JSON.stringify({ canvas, language, settings }),
     })
+  }
+
+  // Preview export (returns files with issues and preview snippets)
+  async exportPreview(canvas: any, language: 'discord.js' | 'discord.py', settings: any) {
+    return this.request<{ files: any[] }>(`/api/export?preview=true`, {
+      method: 'POST',
+      body: JSON.stringify({ canvas, language, settings }),
+    })
+  }
+
+  // Request backend to generate a ZIP and return as blob
+  async exportZip(canvas: any, language: 'discord.js' | 'discord.py', settings: any) {
+    try {
+      const response = await fetch(`${API_BASE}/api/export?format=zip`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-User-ID': this.userId,
+        },
+        body: JSON.stringify({ canvas, language, settings }),
+      })
+
+      if (!response.ok) {
+        const err = await response.text()
+        return { error: err }
+      }
+
+      const blob = await response.blob()
+      return { blob }
+    } catch (error) {
+      console.error('Export zip failed:', error)
+      return { error: 'Network error' }
+    }
   }
 }
 

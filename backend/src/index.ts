@@ -1,21 +1,24 @@
 import { Hono } from "hono";
 import { cors } from "hono/cors";
+import { serve } from "@hono/node-server";
 import { projectRoutes } from "./api/projects.js";
 import { exportRoutes } from "./api/export.js";
 import { aiRoutes } from "./api/ai.js";
+import { autoGenRoutes } from "./api/autoGen.js";
+import { setupCollabWebSocket } from "./collab/room.js";
 
-export interface Env {
-  PROJECTS_KV: KVNamespace;
-  COLLABORATION: DurableObjectNamespace;
-}
-
-const app = new Hono<{ Bindings: Env }>();
+const app = new Hono();
 
 // CORS for frontend
 app.use(
   "/*",
   cors({
-    origin: ["http://localhost:3000", "https://botify.app"],
+    origin: [
+      "http://localhost:3000",
+      "http://localhost:5173",
+      "https://kyto.app",
+      "https://kyto.pages.dev",
+    ],
     credentials: true,
   }),
 );
@@ -24,8 +27,10 @@ app.use(
 app.get("/", (c) =>
   c.json({
     status: "ok",
-    service: "Botify Backend",
+    service: "Kyto Backend",
     version: "1.0.0",
+    ai: "Rule-based + SLM",
+    features: ["projects", "ai", "export", "collaboration", "auto-generate"],
   }),
 );
 
@@ -33,23 +38,20 @@ app.get("/", (c) =>
 app.route("/api/projects", projectRoutes);
 app.route("/api/export", exportRoutes);
 app.route("/api/ai", aiRoutes);
+app.route("/api/ai", autoGenRoutes);
 
-// Collaboration WebSocket (handled by Durable Object)
-app.get("/collab/:projectId", async (c) => {
-  const projectId = c.req.param("projectId");
-  const upgradeHeader = c.req.header("Upgrade");
+// Server setup with WebSocket support
+const port = Number(process.env.PORT) || 8787;
 
-  if (upgradeHeader !== "websocket") {
-    return c.text("Expected WebSocket", 400);
-  }
-
-  const id = c.env.COLLABORATION.idFromName(projectId);
-  const stub = c.env.COLLABORATION.get(id);
-
-  return stub.fetch(c.req.raw);
-});
+if (process.env.NODE_ENV === "production") {
+  const server = serve({ fetch: app.fetch, port });
+  setupCollabWebSocket(server);
+  console.log(`[Kyto] Production server running on port ${port}`);
+} else {
+  const server = serve({ fetch: app.fetch, port });
+  setupCollabWebSocket(server);
+  console.log(`[Kyto] Development server running on http://localhost:${port}`);
+}
 
 export default app;
 
-// Export Durable Object for collaboration
-export { CollaborationRoom } from "./collab/room.js";

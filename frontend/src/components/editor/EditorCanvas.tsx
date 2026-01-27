@@ -1,4 +1,4 @@
-import { useCallback, useEffect, DragEvent, useRef } from 'react'
+import { useCallback, useEffect, DragEvent, useRef, useState } from 'react'
 import { toast } from 'sonner'
 import {
   ReactFlow,
@@ -19,11 +19,17 @@ import {
   OnConnect,
 } from '@xyflow/react'
 import { CustomBlockNode, CustomNodeData } from './CustomBlockNode'
+import { CustomEdge } from './CustomEdge'
+import { ContextMenu } from './ContextMenu'
 import { useEditorStore } from '@/store/editorStore'
 import { BlockType } from '@/types'
 
 const nodeTypes = {
   customBlock: CustomBlockNode,
+}
+
+const edgeTypes = {
+  custom: CustomEdge,
 }
 
 interface EditorCanvasProps {
@@ -78,6 +84,7 @@ function EditorCanvasInner({ entityId, onBlockDragStart, draggedBlockType }: Edi
       target: conn.target,
       sourceHandle: conn.sourceHandle,
       targetHandle: conn.targetHandle,
+      type: 'custom',
       animated: true,
       style: { stroke: '#6366f1', strokeWidth: 3 },
     }))
@@ -88,7 +95,7 @@ function EditorCanvasInner({ entityId, onBlockDragStart, draggedBlockType }: Edi
     lastStoreBlocks.current = JSON.stringify(blocks)
     lastStoreConnections.current = JSON.stringify(connections)
 
-    const timer = setTimeout(() => fitView({ padding: 0.2, duration: 400 }), 50)
+    const timer = setTimeout(() => fitView({ padding: 0.2, duration: 400, maxZoom: 1 }), 50)
     return () => clearTimeout(timer)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [entityId])
@@ -131,6 +138,7 @@ function EditorCanvasInner({ entityId, onBlockDragStart, draggedBlockType }: Edi
         target: conn.target,
         sourceHandle: conn.sourceHandle,
         targetHandle: conn.targetHandle,
+        type: 'custom',
         animated: true,
         style: { stroke: '#6366f1', strokeWidth: 3 },
       }))
@@ -186,7 +194,13 @@ function EditorCanvasInner({ entityId, onBlockDragStart, draggedBlockType }: Edi
       // We update local state immediately for visual snappiness
       setEdges(eds =>
         addEdge(
-          { ...params, id, animated: true, style: { stroke: '#6366f1', strokeWidth: 3 } },
+          {
+            ...params,
+            id,
+            type: 'custom',
+            animated: true,
+            style: { stroke: '#6366f1', strokeWidth: 3 },
+          },
           eds
         )
       )
@@ -217,6 +231,24 @@ function EditorCanvasInner({ entityId, onBlockDragStart, draggedBlockType }: Edi
     [draggedBlockType, addBlock, onBlockDragStart, screenToFlowPosition]
   )
 
+  const [menuPosition, setMenuPosition] = useState<{ x: number; y: number } | null>(null)
+
+  const onPaneContextMenu = useCallback((event: React.MouseEvent) => {
+    event.preventDefault()
+    setMenuPosition({ x: event.clientX, y: event.clientY })
+  }, [])
+
+  const onAddFromMenu = useCallback(
+    (type: BlockType) => {
+      if (!menuPosition) return
+      const position = screenToFlowPosition(menuPosition)
+      addBlock(type, position) // No adjustment needed for exact placement
+      setMenuPosition(null)
+      toast.success('Block added.')
+    },
+    [menuPosition, addBlock, screenToFlowPosition]
+  )
+
   return (
     <div className="w-full h-full bg-white dark:bg-[#08080c] relative flex flex-col transition-colors duration-500 overflow-hidden isolate">
       <ReactFlow
@@ -227,8 +259,10 @@ function EditorCanvasInner({ entityId, onBlockDragStart, draggedBlockType }: Edi
         onConnect={onConnect}
         onDrop={onDrop}
         onDragOver={onDragOver}
+        onContextMenu={onPaneContextMenu} // Right click trigger
         onMoveEnd={(_, viewport) => updateViewport(viewport)}
         nodeTypes={nodeTypes}
+        edgeTypes={edgeTypes}
         minZoom={0.05}
         maxZoom={4}
         className="flex-1"
@@ -257,6 +291,12 @@ function EditorCanvasInner({ entityId, onBlockDragStart, draggedBlockType }: Edi
           position="bottom-right"
         />
       </ReactFlow>
+
+      <ContextMenu
+        position={menuPosition}
+        onClose={() => setMenuPosition(null)}
+        onAddBlock={onAddFromMenu}
+      />
     </div>
   )
 }

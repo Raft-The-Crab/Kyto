@@ -1,6 +1,15 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
-import { Command, EventListener, Module, Project, ProjectSettings, CanvasBlock } from '@/types'
+import {
+  Command,
+  EventListener,
+  Module,
+  Project,
+  ProjectSettings,
+  CanvasBlock,
+  GlobalVariable,
+  FileNode,
+} from '@/types'
 import { generateId } from '@/lib/utils'
 import { BLOCK_DEFINITIONS } from '@/lib/blocks/definitions'
 
@@ -19,6 +28,7 @@ interface ProjectState {
   commands: Command[]
   events: EventListener[]
   modules: Module[]
+  variables: GlobalVariable[]
 
   // UI State
   activeFileId: string
@@ -51,24 +61,40 @@ interface ProjectState {
   getEvent: (id: string) => EventListener | undefined
   updateEvent: (id: string, updates: Partial<EventListener>) => void
 
+  // Variables
+  createVariable: (
+    name: string,
+    type: 'string' | 'number' | 'boolean' | 'secret',
+    value: string
+  ) => void
+  deleteVariable: (id: string) => void
+  updateVariable: (id: string, updates: Partial<GlobalVariable>) => void
+
   // Modules
   createModule: () => string
   deleteModule: (id: string) => void
   getModule: (id: string) => Module | undefined
   updateModule: (id: string, updates: Partial<Module>) => void
-}
 
-const DEFAULT_PROJECT_ID = 'default-bot'
+  // File System
+  createFile: (parentId: string, name: string, content?: string) => string
+  createFolder: (parentId: string, name: string) => string
+  deleteNode: (id: string) => void
+  renameNode: (id: string, newName: string) => void
+  updateFileContent: (id: string, content: string) => void
+  toggleFolder: (id: string) => void
+}
 
 const createInitialProject = (id: string, name: string): Project => ({
   id,
   name,
-  description: 'Built with Botify',
+  description: 'Built with Kyto',
   language: 'discord.js',
   version: '1.0.0',
   commands: [],
   events: [],
   modules: [],
+  variables: [],
   settings: {
     botToken: '',
     clientId: '',
@@ -76,6 +102,32 @@ const createInitialProject = (id: string, name: string): Project => ({
     intents: ['Guilds', 'GuildMessages', 'MessageContent'],
     permissions: [],
   },
+  files: {
+    root: {
+      id: 'root',
+      name: 'root',
+      type: 'folder',
+      parentId: null,
+      children: ['main', 'utils'],
+      isExpanded: true,
+    },
+    main: {
+      id: 'main',
+      name: 'index.js',
+      type: 'file',
+      parentId: 'root',
+      content: '// Main Bot Entry\n',
+    },
+    utils: {
+      id: 'utils',
+      name: 'utils',
+      type: 'folder',
+      parentId: 'root',
+      children: [],
+      isExpanded: false,
+    },
+  },
+  rootFolderId: 'root',
   createdAt: Date.now(),
   updatedAt: Date.now(),
 })
@@ -84,14 +136,12 @@ export const useProjectStore = create<ProjectState>()(
   persist(
     (set, get) => ({
       // Initial Workspace State
-      projects: {
-        [DEFAULT_PROJECT_ID]: createInitialProject(DEFAULT_PROJECT_ID, 'My Awesome Bot'),
-      },
-      activeProjectId: DEFAULT_PROJECT_ID,
+      projects: {},
+      activeProjectId: '',
 
-      // Computed properties (These are getters in usage, but initialized for hydration consistency)
+      // Computed properties
       name: 'My Awesome Bot',
-      description: 'Built with Botify',
+      description: 'Built with Kyto',
       language: 'discord.js',
       settings: {
         botToken: '',
@@ -103,6 +153,7 @@ export const useProjectStore = create<ProjectState>()(
       commands: [],
       events: [],
       modules: [],
+      variables: [], // Initialize proxy state
       activeFileId: 'main',
 
       // Workspace Actions
@@ -127,6 +178,7 @@ export const useProjectStore = create<ProjectState>()(
           commands: [],
           events: [],
           modules: [],
+          variables: [],
         }))
         return id
       },
@@ -144,29 +196,28 @@ export const useProjectStore = create<ProjectState>()(
           commands: project.commands,
           events: project.events,
           modules: project.modules,
+          variables: project.variables || [], // Handle legacy projects
         })
       },
 
       deleteProject: projectId => {
         const { projects, activeProjectId } = get()
-        if (Object.keys(projects).length <= 1) return // Prevent deleting last project
+        if (Object.keys(projects).length <= 1) return
 
         const newProjects = { ...projects }
         delete newProjects[projectId]
 
-        // If deleting active project, switch to another one
         let newActiveId = activeProjectId
         if (activeProjectId === projectId) {
           newActiveId = Object.keys(newProjects)[0] as string
         }
 
         const project = newProjects[newActiveId]
-        if (!project) return // Should never happen given length check, but satisfies TS
+        if (!project) return
 
         set({
           projects: newProjects,
           activeProjectId: newActiveId,
-          // Sync proxy state
           name: project.name,
           description: project.description,
           language: project.language,
@@ -174,6 +225,7 @@ export const useProjectStore = create<ProjectState>()(
           commands: project.commands,
           events: project.events,
           modules: project.modules,
+          variables: project.variables || [],
         })
       },
 
@@ -184,14 +236,14 @@ export const useProjectStore = create<ProjectState>()(
 
           const updatedProject = { ...project, ...updates, updatedAt: Date.now() }
 
-          // If updating active project, sync proxy state
           if (state.activeProjectId === id) {
             // Need to manually pick updates to sync with proxy state to avoid type errors
-            // eslint-disable-next-line @typescript-eslint/no-unused-vars
-            const { commands, events, modules, settings, ...metaUpdates } = updates
+            const { name, description, language } = updates
             return {
               projects: { ...state.projects, [id]: updatedProject },
-              ...metaUpdates,
+              name,
+              description,
+              language,
             }
           }
 
@@ -201,7 +253,6 @@ export const useProjectStore = create<ProjectState>()(
         })
       },
 
-      // Helper to update active project state
       _updateActive: updater => {
         set(state => {
           const activeId = state.activeProjectId
@@ -218,7 +269,6 @@ export const useProjectStore = create<ProjectState>()(
         })
       },
 
-      // Metadata Actions
       updateMetadata: updates => {
         get()._updateActive(() => updates)
       },
@@ -356,11 +406,30 @@ export const useProjectStore = create<ProjectState>()(
         }))
       },
 
+      // Variables
+      createVariable: (name, type, value) => {
+        const id = generateId('var')
+        get()._updateActive(project => ({
+          variables: [...(project.variables || []), { id, name, type, value }],
+        }))
+      },
+
+      deleteVariable: id => {
+        get()._updateActive(project => ({
+          variables: (project.variables || []).filter(v => v.id !== id),
+        }))
+      },
+
+      updateVariable: (id, updates) => {
+        get()._updateActive(project => ({
+          variables: (project.variables || []).map(v => (v.id === id ? { ...v, ...updates } : v)),
+        }))
+      },
+
       // Modules
       createModule: () => {
         const id = generateId('mod')
         const triggerId = generateId('block')
-        const definition = BLOCK_DEFINITIONS['command_slash']
 
         const initialBlock: CanvasBlock = {
           id: triggerId,
@@ -418,11 +487,123 @@ export const useProjectStore = create<ProjectState>()(
           ),
         }))
       },
+
+      // File System Implementation
+      createFile: (parentId, name, content = '') => {
+        const id = generateId('file')
+        get()._updateActive(project => {
+          const newFile: FileNode = {
+            id: id as string,
+            name,
+            type: 'file',
+            content,
+            parentId,
+          }
+
+          const files = { ...project.files }
+          files[id] = newFile
+
+          // Update parent
+          if (files[parentId]) {
+            const parent = { ...files[parentId] }
+            parent.children = [...(parent.children || []), id]
+            files[parentId] = parent
+          }
+
+          return { files }
+        })
+        return id
+      },
+
+      createFolder: (parentId, name) => {
+        const id = generateId('folder')
+        get()._updateActive(project => {
+          const newFolder: FileNode = {
+            id: id as string,
+            name,
+            type: 'folder',
+            parentId,
+            children: [],
+            isExpanded: true,
+          }
+
+          const files = { ...project.files }
+          files[id] = newFolder
+
+          // Update parent
+          if (files[parentId]) {
+            const parent = { ...files[parentId] }
+            parent.children = [...(parent.children || []), id]
+            files[parentId] = parent
+          }
+
+          return { files }
+        })
+        return id
+      },
+
+      deleteNode: id => {
+        get()._updateActive(project => {
+          const files = { ...project.files }
+          const node = files[id]
+          if (!node || !node.parentId) return {} // Can't delete root
+
+          // Remove from parent
+          const parentNode = files[node.parentId]
+          if (parentNode) {
+            const parent = { ...parentNode }
+            parent.children = (parent.children || []).filter(childId => childId !== id)
+            files[node.parentId] = parent
+          }
+
+          // Recursive delete helper
+          const deleteRecursive = (nodeId: string) => {
+            const n = files[nodeId]
+            if (!n) return
+            if (n.children) {
+              n.children.forEach(deleteRecursive)
+            }
+            delete files[nodeId]
+          }
+
+          deleteRecursive(id)
+          return { files }
+        })
+      },
+
+      renameNode: (id, newName) => {
+        get()._updateActive(project => {
+          const files = { ...project.files }
+          if (files[id]) {
+            files[id] = { ...files[id], name: newName }
+          }
+          return { files }
+        })
+      },
+
+      updateFileContent: (id, content) => {
+        get()._updateActive(project => {
+          const files = { ...project.files }
+          if (files[id]) {
+            files[id] = { ...files[id], content }
+          }
+          return { files }
+        })
+      },
+
+      toggleFolder: id => {
+        get()._updateActive(project => {
+          const files = { ...project.files }
+          if (files[id]) {
+            files[id] = { ...files[id], isExpanded: !files[id].isExpanded }
+          }
+          return { files }
+        })
+      },
     }),
     {
-      name: 'botify-workspace-storage', // Renamed to force fresh state for new schema
+      name: 'kyto-workspace-storage-v1',
       onRehydrateStorage: () => state => {
-        // Hydration fix: Ensure proxy state matches active project on load
         if (state && state.projects && state.activeProjectId) {
           const active = state.projects[state.activeProjectId]
           if (active) {
@@ -433,6 +614,37 @@ export const useProjectStore = create<ProjectState>()(
             state.commands = active.commands
             state.events = active.events
             state.modules = active.modules
+            state.variables = active.variables || []
+            // Hydrate files or init default
+            if (!active.files) {
+              // Migration for old projects
+              const rootId = 'root'
+              const mainId = 'main_file'
+
+              const files: Record<string, FileNode> = {
+                [rootId]: {
+                  id: rootId,
+                  name: 'root',
+                  type: 'folder',
+                  parentId: null,
+                  children: [mainId],
+                  isExpanded: true,
+                },
+                [mainId]: {
+                  id: mainId,
+                  name: active.language === 'discord.js' ? 'index.js' : 'bot.py',
+                  type: 'file',
+                  parentId: rootId,
+                  content: '// Main Bot Entry\n',
+                },
+              }
+
+              const project = state.projects[state.activeProjectId]
+              if (project) {
+                project.files = files
+                project.rootFolderId = rootId
+              }
+            }
           }
         }
       },

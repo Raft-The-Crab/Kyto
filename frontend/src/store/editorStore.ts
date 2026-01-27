@@ -3,6 +3,12 @@ import { CanvasBlock, BlockConnection, BlockType, CanvasState } from '@/types'
 import { BLOCK_DEFINITIONS } from '@/lib/blocks/definitions'
 
 interface EditorState extends CanvasState {
+  // Undo/Redo
+  history: CanvasState[]
+  historyIndex: number
+  canUndo: boolean
+  canRedo: boolean
+
   // Actions
   addBlock: (type: BlockType, position: { x: number; y: number }) => void
   removeBlock: (id: string) => void
@@ -18,7 +24,10 @@ interface EditorState extends CanvasState {
   getBlockById: (id: string) => CanvasBlock | undefined
   clearCanvas: () => void
   duplicateBlock: (id: string) => void
-  setCanvasState: (state: CanvasState) => void
+  undo: () => void
+  redo: () => void
+  setCanvasState: (newState: Partial<CanvasState>) => void
+  saveState: () => void
 }
 
 export const useEditorStore = create<EditorState>((set, get) => ({
@@ -26,6 +35,29 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   connections: [],
   selectedBlockId: null,
   viewportPosition: { x: 0, y: 0, zoom: 1 },
+  history: [],
+  historyIndex: -1,
+  canUndo: false,
+  canRedo: false,
+
+  // Helper to save state for undo/redo
+  saveState: () => {
+    const state = get()
+    const currentState = {
+      blocks: state.blocks,
+      connections: state.connections,
+      selectedBlockId: state.selectedBlockId,
+      viewportPosition: state.viewportPosition,
+    }
+    const newHistory = state.history.slice(0, state.historyIndex + 1)
+    newHistory.push(currentState)
+    set({
+      history: newHistory,
+      historyIndex: newHistory.length - 1,
+      canUndo: newHistory.length > 1,
+      canRedo: false,
+    })
+  },
 
   addBlock: (type, position) => {
     const definition = BLOCK_DEFINITIONS[type]
@@ -60,6 +92,8 @@ export const useEditorStore = create<EditorState>((set, get) => ({
       blocks: [...state.blocks, newBlock],
       selectedBlockId: id,
     }))
+
+    get().saveState()
   },
 
   removeBlock: id => {
@@ -68,6 +102,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
       connections: state.connections.filter(conn => conn.source !== id && conn.target !== id),
       selectedBlockId: state.selectedBlockId === id ? null : state.selectedBlockId,
     }))
+    get().saveState()
   },
 
   updateBlock: (id, updates) => {
@@ -147,5 +182,31 @@ export const useEditorStore = create<EditorState>((set, get) => ({
       selectedBlockId: newState.selectedBlockId || null,
       viewportPosition: newState.viewportPosition || { x: 0, y: 0, zoom: 1 },
     })
+  },
+
+  undo: () => {
+    const state = get()
+    if (state.historyIndex > 0) {
+      const prevState = state.history[state.historyIndex - 1]
+      set({
+        ...prevState,
+        historyIndex: state.historyIndex - 1,
+        canUndo: state.historyIndex - 1 > 0,
+        canRedo: true,
+      })
+    }
+  },
+
+  redo: () => {
+    const state = get()
+    if (state.historyIndex < state.history.length - 1) {
+      const nextState = state.history[state.historyIndex + 1]
+      set({
+        ...nextState,
+        historyIndex: state.historyIndex + 1,
+        canUndo: true,
+        canRedo: state.historyIndex + 1 < state.history.length - 1,
+      })
+    }
   },
 }))

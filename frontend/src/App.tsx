@@ -1,7 +1,6 @@
 import React from 'react'
 import { Routes, Route, Navigate, useLocation } from 'react-router-dom'
 import LandingPage from './pages/LandingPage'
-import UniversalBuilderPage from './pages/UniversalBuilderPage'
 import CommandsListPage from './pages/CommandsListPage'
 import EventsListPage from './pages/EventsListPage'
 import ModulesListPage from './pages/ModulesListPage'
@@ -10,10 +9,16 @@ import DashboardPage from './pages/DashboardPage'
 import LoginPage from './pages/LoginPage'
 import SignupPage from './pages/SignupPage'
 import DocsPage from './pages/DocsPage'
-import TermsOfServicePage from './pages/TermsOfServicePage'
-import PrivacyPolicyPage from './pages/PrivacyPolicyPage'
+import TermsOfService from './pages/TermsOfServicePage'
+import PrivacyPolicy from './pages/PrivacyPolicyPage'
 import AutoModPage from './pages/AutoModPage'
 import ChangelogPage from './pages/ChangelogPage'
+import CommandBuilderPage from './pages/CommandBuilderPage'
+import EventBuilderPage from './pages/EventBuilderPage'
+import ModuleBuilderPage from './pages/ModuleBuilderPage'
+import { StatusPage } from './pages/StatusPage'
+import { DocumentationPage } from './pages/DocumentationPage'
+import { IntegrationsPage } from './pages/IntegrationsPage'
 
 import { ThemeProvider } from '@/components/providers/ThemeProvider'
 import { CommandPalette } from '@/components/layout/CommandPalette'
@@ -23,10 +28,10 @@ import { AnimatePresence, motion } from 'framer-motion'
 function PageWrapper({ children }: { children: React.ReactNode }) {
   return (
     <motion.div
-      initial={{ opacity: 0, y: 10 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: -10 }}
-      transition={{ duration: 0.3, ease: 'easeOut' }}
+      initial={{ opacity: 0, scale: 0.99 }}
+      animate={{ opacity: 1, scale: 1 }}
+      exit={{ opacity: 0 }}
+      transition={{ duration: 0.2, ease: 'easeOut' }}
       className="h-full"
     >
       {children}
@@ -38,7 +43,7 @@ function App() {
   const location = useLocation()
 
   return (
-    <ThemeProvider defaultTheme="light" storageKey="botify-theme">
+    <ThemeProvider defaultTheme="dark" storageKey="kyto-theme">
       <CommandPalette />
       <AnimatePresence mode="wait">
         <Routes location={location} key={location.pathname}>
@@ -74,7 +79,6 @@ function App() {
               </PageWrapper>
             }
           />
-
           <Route
             path="/commands"
             element={
@@ -100,9 +104,55 @@ function App() {
             }
           />
 
-          <Route path="/builder/commands/:id" element={<UniversalBuilderPage />} />
-          <Route path="/builder/events/:id" element={<UniversalBuilderPage />} />
-          <Route path="/builder/modules/:id" element={<UniversalBuilderPage />} />
+          {/* Builder Routes - Dedicated Pages */}
+          <Route
+            path="/command/:id"
+            element={
+              <PageWrapper>
+                <CommandBuilderPage />
+              </PageWrapper>
+            }
+          />
+          <Route
+            path="/event/:id"
+            element={
+              <PageWrapper>
+                <EventBuilderPage />
+              </PageWrapper>
+            }
+          />
+          <Route
+            path="/module/:id"
+            element={
+              <PageWrapper>
+                <ModuleBuilderPage />
+              </PageWrapper>
+            }
+          />
+          <Route
+            path="/builder/commands/:id"
+            element={
+              <PageWrapper>
+                <CommandBuilderPage />
+              </PageWrapper>
+            }
+          />
+          <Route
+            path="/builder/events/:id"
+            element={
+              <PageWrapper>
+                <EventBuilderPage />
+              </PageWrapper>
+            }
+          />
+          <Route
+            path="/builder/modules/:id"
+            element={
+              <PageWrapper>
+                <ModuleBuilderPage />
+              </PageWrapper>
+            }
+          />
 
           <Route
             path="/marketplace"
@@ -112,7 +162,6 @@ function App() {
               </PageWrapper>
             }
           />
-
           <Route
             path="/docs"
             element={
@@ -125,7 +174,7 @@ function App() {
             path="/terms"
             element={
               <PageWrapper>
-                <TermsOfServicePage />
+                <TermsOfService />
               </PageWrapper>
             }
           />
@@ -133,11 +182,10 @@ function App() {
             path="/privacy"
             element={
               <PageWrapper>
-                <PrivacyPolicyPage />
+                <PrivacyPolicy />
               </PageWrapper>
             }
           />
-
           <Route
             path="/changelog"
             element={
@@ -146,7 +194,6 @@ function App() {
               </PageWrapper>
             }
           />
-
           <Route
             path="/automod"
             element={
@@ -155,7 +202,30 @@ function App() {
               </PageWrapper>
             }
           />
-
+          <Route
+            path="/status"
+            element={
+              <PageWrapper>
+                <StatusPage />
+              </PageWrapper>
+            }
+          />
+          <Route
+            path="/documentation"
+            element={
+              <PageWrapper>
+                <DocumentationPage />
+              </PageWrapper>
+            }
+          />
+          <Route
+            path="/integrations"
+            element={
+              <PageWrapper>
+                <IntegrationsPage />
+              </PageWrapper>
+            }
+          />
           <Route path="/builder" element={<Navigate to="/commands" replace />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>

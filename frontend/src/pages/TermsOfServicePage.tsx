@@ -32,7 +32,7 @@ export default function TermsOfServicePage() {
                 Agreement to Terms
               </h2>
               <p className="text-slate-600 font-medium leading-relaxed">
-                By accessing or using Botify ("the Service"), you agree to be bound by these Terms
+                By accessing or using Kyto ("the Service"), you agree to be bound by these Terms
                 of Service. If you do not agree to all of the terms, do not access the Service.
               </p>
             </section>
@@ -45,7 +45,7 @@ export default function TermsOfServicePage() {
                 Use of the Service
               </h2>
               <div className="space-y-4">
-                <TermItem text="You are responsible for any bots you create and deploy using Botify." />
+                <TermItem text="You are responsible for any bots you create and deploy using Kyto." />
                 <TermItem text="You must not use the service for illegal or unauthorized purposes." />
                 <TermItem text="You must comply with Discord's Developer Terms of Service at all times." />
               </div>
@@ -59,7 +59,7 @@ export default function TermsOfServicePage() {
                 </h2>
               </div>
               <p className="text-slate-600 font-medium leading-relaxed italic">
-                Botify is provided "as is" and "as available". We are not responsible for any issues
+                Kyto is provided "as is" and "as available". We are not responsible for any issues
                 arising from Discord's API changes or bot downtime.
               </p>
             </section>

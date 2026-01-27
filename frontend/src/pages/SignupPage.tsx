@@ -1,139 +1,143 @@
-import React, { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { Rocket, ArrowRight, Lock, Mail, User } from 'lucide-react'
+import { Terminal, Lock, Mail, User, ArrowRight, Loader2 } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
-import { Input } from '@/components/ui/Input'
-import { useAuthStore } from '@/store/authStore'
+import { NeoLayout } from '@/components/layout/NeoLayout'
+import { motion } from 'framer-motion'
+import { useState } from 'react'
 import { toast } from 'sonner'
 
 export default function SignupPage() {
   const navigate = useNavigate()
-  const { login } = useAuthStore()
-  const [name, setName] = useState('')
-  const [email, setEmail] = useState('')
-  const [loading, setLoading] = useState(false)
+  const [isLoading, setIsLoading] = useState(false)
+  const [formData, setFormData] = useState({ name: '', email: '', password: '' })
 
-  const handleSignup = (e: React.FormEvent) => {
+  const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault()
-    setLoading(true)
+    if (!formData.name || !formData.email || !formData.password) {
+      toast.error('Please fill in all fields')
+      return
+    }
 
-    setTimeout(() => {
-      login(name, email)
-      toast.success(`Welcome to Botify, ${name}! 🚀`)
-      navigate('/dashboard')
-      setLoading(false)
-    }, 800)
+    setIsLoading(true)
+    // Simulate API call
+    await new Promise(resolve => setTimeout(resolve, 1500))
+
+    toast.success('Account created! Redirecting...')
+    setTimeout(() => navigate('/dashboard'), 1000)
   }
 
   return (
-    <div className="min-h-screen grid grid-cols-1 md:grid-cols-2">
-      {/* Right: Form (Order swapped for visual interest compared to Login) */}
-      <div className="md:order-2 bg-white flex items-center justify-center p-6 md:p-12 relative">
-        <Link
-          to="/"
-          className="absolute top-8 right-8 text-sm font-bold text-slate-500 hover:text-slate-900"
-        >
-          Back to Home
-        </Link>
+    <NeoLayout>
+      <div className="flex min-h-screen items-center justify-center p-4 relative overflow-hidden">
+        {/* Background FX */}
+        <div className="absolute inset-0 overflow-hidden pointer-events-none">
+          <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-emerald-500/10 rounded-full blur-[128px] animate-pulse-slow" />
+          <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-indigo-500/10 rounded-full blur-[128px] animate-pulse-slow delay-1000" />
+        </div>
 
-        <div className="w-full max-w-md space-y-8">
-          <div className="text-center md:text-left">
-            <h2 className="text-3xl font-black text-slate-900 mb-2">Create an account</h2>
-            <p className="text-slate-500 font-medium">Start building your dream bot in seconds.</p>
+        <motion.div
+          initial={{ opacity: 0, scale: 0.95, y: 20 }}
+          animate={{ opacity: 1, scale: 1, y: 0 }}
+          transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+          className="w-full max-w-md bg-white/80 dark:bg-black/40 border border-slate-200 dark:border-white/10 rounded-3xl p-8 shadow-2xl backdrop-blur-xl relative z-10"
+        >
+          <div className="mb-8 text-center">
+            <Link
+              to="/"
+              className="inline-flex items-center gap-2 mb-6 group transition-transform hover:scale-105"
+            >
+              <div className="p-2.5 bg-linear-to-br from-emerald-400 to-emerald-600 rounded-xl text-white shadow-lg shadow-emerald-500/20 ring-1 ring-white/20">
+                <Terminal className="w-5 h-5" />
+              </div>
+              <span className="font-black text-2xl tracking-tighter text-slate-900 dark:text-white">
+                KYTO
+              </span>
+            </Link>
+            <h1 className="text-3xl font-black text-slate-900 dark:text-white mb-2 tracking-tight">
+              Create Account
+            </h1>
+            <p className="text-slate-500 dark:text-slate-400 font-medium">
+              Join 10,000+ developers building the future.
+            </p>
           </div>
 
-          <form onSubmit={handleSignup} className="space-y-6">
-            <div className="space-y-2">
-              <label className="text-sm font-bold text-slate-700">Full Name</label>
+          <form onSubmit={handleSignup} className="space-y-5">
+            <div className="space-y-2 group">
+              <label className="text-xs font-bold uppercase text-slate-500 dark:text-slate-400 ml-1 tracking-wider group-focus-within:text-emerald-500 transition-colors">
+                Full Name
+              </label>
               <div className="relative">
-                <User className="absolute left-3 top-3 w-5 h-5 text-slate-400" />
-                <Input
+                <User className="absolute left-4 top-3.5 w-5 h-5 text-slate-400 group-focus-within:text-emerald-500 transition-colors" />
+                <input
+                  type="text"
+                  value={formData.name}
+                  onChange={e => setFormData({ ...formData, name: e.target.value })}
                   placeholder="John Doe"
-                  className="pl-10"
-                  required
-                  value={name}
-                  onChange={e => setName(e.target.value)}
+                  className="w-full bg-slate-50 dark:bg-zinc-900/50 border-2 border-slate-200 dark:border-white/5 rounded-2xl py-3 pl-12 pr-4 outline-none focus:border-emerald-500/50 focus:bg-emerald-500/5 focus:ring-4 focus:ring-emerald-500/10 transition-all font-bold text-slate-900 dark:text-white placeholder:text-slate-400 placeholder:font-medium"
                 />
               </div>
             </div>
 
-            <div className="space-y-2">
-              <label className="text-sm font-bold text-slate-700">Email Address</label>
+            <div className="space-y-2 group">
+              <label className="text-xs font-bold uppercase text-slate-500 dark:text-slate-400 ml-1 tracking-wider group-focus-within:text-emerald-500 transition-colors">
+                Email Address
+              </label>
               <div className="relative">
-                <Mail className="absolute left-3 top-3 w-5 h-5 text-slate-400" />
-                <Input
+                <Mail className="absolute left-4 top-3.5 w-5 h-5 text-slate-400 group-focus-within:text-emerald-500 transition-colors" />
+                <input
                   type="email"
+                  value={formData.email}
+                  onChange={e => setFormData({ ...formData, email: e.target.value })}
                   placeholder="name@example.com"
-                  className="pl-10"
-                  required
-                  value={email}
-                  onChange={e => setEmail(e.target.value)}
+                  className="w-full bg-slate-50 dark:bg-zinc-900/50 border-2 border-slate-200 dark:border-white/5 rounded-2xl py-3 pl-12 pr-4 outline-none focus:border-emerald-500/50 focus:bg-emerald-500/5 focus:ring-4 focus:ring-emerald-500/10 transition-all font-bold text-slate-900 dark:text-white placeholder:text-slate-400 placeholder:font-medium"
                 />
               </div>
             </div>
 
-            <div className="space-y-2">
-              <label className="text-sm font-bold text-slate-700">Password</label>
+            <div className="space-y-2 group">
+              <label className="text-xs font-bold uppercase text-slate-500 dark:text-slate-400 ml-1 tracking-wider group-focus-within:text-emerald-500 transition-colors">
+                Password
+              </label>
               <div className="relative">
-                <Lock className="absolute left-3 top-3 w-5 h-5 text-slate-400" />
-                <Input
+                <Lock className="absolute left-4 top-3.5 w-5 h-5 text-slate-400 group-focus-within:text-emerald-500 transition-colors" />
+                <input
                   type="password"
-                  placeholder="Create a strong password"
-                  className="pl-10"
-                  required
+                  value={formData.password}
+                  onChange={e => setFormData({ ...formData, password: e.target.value })}
+                  placeholder="••••••••"
+                  className="w-full bg-slate-50 dark:bg-zinc-900/50 border-2 border-slate-200 dark:border-white/5 rounded-2xl py-3 pl-12 pr-4 outline-none focus:border-emerald-500/50 focus:bg-emerald-500/5 focus:ring-4 focus:ring-emerald-500/10 transition-all font-bold text-slate-900 dark:text-white placeholder:text-slate-400 placeholder:font-medium"
                 />
               </div>
             </div>
 
-            <Button type="submit" className="w-full h-12 text-lg" disabled={loading}>
-              {loading ? 'Creating...' : 'Get Started'} <ArrowRight className="ml-2 w-5 h-5" />
+            <Button
+              className="w-full h-14 text-lg font-black shadow-lg shadow-emerald-500/20 mt-4 bg-emerald-600 hover:bg-emerald-500 hover:scale-[1.02] active:scale-[0.98] transition-all rounded-2xl"
+              disabled={isLoading}
+            >
+              {isLoading ? (
+                <div className="flex items-center gap-2">
+                  <Loader2 className="w-5 h-5 animate-spin" />
+                  Creating Account...
+                </div>
+              ) : (
+                <div className="flex items-center gap-2">
+                  Get Started Free <ArrowRight className="w-5 h-5" />
+                </div>
+              )}
             </Button>
           </form>
 
-          <div className="text-center font-medium">
-            <span className="text-slate-500">Already have an account? </span>
-            <Link to="/login" className="text-indigo-600 hover:underline">
-              Sign in here
+          <p className="mt-8 text-center text-sm font-medium text-slate-500 dark:text-slate-400">
+            Already have an account?{' '}
+            <Link
+              to="/login"
+              className="text-emerald-600 dark:text-emerald-400 font-bold hover:underline underline-offset-4 decoration-2"
+            >
+              Sign in
             </Link>
-          </div>
-        </div>
+          </p>
+        </motion.div>
       </div>
-
-      {/* Left: Branding */}
-      <div className="md:order-1 bg-indigo-600 border-r-2 border-slate-900 hidden md:flex flex-col justify-between p-12 relative overflow-hidden">
-        <div
-          className="absolute inset-0 opacity-10"
-          style={{
-            backgroundImage: 'radial-gradient(#fff 1px, transparent 1px)',
-            backgroundSize: '16px 16px',
-          }}
-        />
-
-        <div className="relative z-10 text-white">
-          <div className="w-12 h-12 bg-white rounded-xl flex items-center justify-center border-2 border-slate-900 shadow-neo mb-6">
-            <Rocket className="w-6 h-6 text-indigo-600" />
-          </div>
-          <h1 className="text-4xl font-black tracking-tight mb-4">
-            Join the
-            <br />
-            Revolution.
-          </h1>
-        </div>
-
-        <div className="relative z-10 text-white">
-          <ul className="space-y-4 font-bold text-lg">
-            <li className="flex items-center gap-3">
-              <span className="w-2 h-2 rounded-full bg-green-400" /> Unlimited Projects
-            </li>
-            <li className="flex items-center gap-3">
-              <span className="w-2 h-2 rounded-full bg-green-400" /> Community Templates
-            </li>
-            <li className="flex items-center gap-3">
-              <span className="w-2 h-2 rounded-full bg-green-400" /> 100% Exportable Code
-            </li>
-          </ul>
-        </div>
-      </div>
-    </div>
+    </NeoLayout>
   )
 }

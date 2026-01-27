@@ -1,10 +1,28 @@
 import { Block } from '@/types'
 
-const generateActionCode = (action: Block, language: 'js' | 'py'): string => {
+const generateActionCode = (
+  action: Block,
+  allBlocks: Block[],
+  connections: Connection[],
+  language: 'js' | 'py'
+): string => {
   const props = action.data.properties || {}
+
+  // Helper for branching
+  const getBranch = (sourceHandle: string) => {
+    const conn = connections.find(c => c.source === action.id && c.sourceHandle === sourceHandle)
+    if (!conn) return language === 'js' ? '' : 'pass'
+    return generateFlow(action.id, allBlocks, connections, language, conn.target)
+  }
 
   if (language === 'js') {
     switch (action.type) {
+      case 'if_condition':
+        return `    if (${props.condition}) {\n${getBranch('true')}\n    } else {\n${getBranch('false')}\n    }\n`
+      case 'condition_has_role':
+        return `    if (interaction.member.roles.cache.has('${props.roleId}')) {\n${getBranch('true')}\n    } else {\n${getBranch('false')}\n    }\n`
+      case 'condition_has_permission':
+        return `    if (interaction.member.permissions.has(PermissionFlagsBits.${props.permission})) {\n${getBranch('true')}\n    } else {\n${getBranch('false')}\n    }\n`
       case 'send_message':
         return `    await interaction.channel.send({ content: \`${props.content || ''}\`, ephemeral: ${props.ephemeral || false} });\n`
       case 'action_reply':
@@ -13,6 +31,17 @@ const generateActionCode = (action: Block, language: 'js' | 'py'): string => {
         return `    const embed = new EmbedBuilder()\n      .setTitle(\`${props.title || ''}\`)\n      .setDescription(\`${props.description || ''}\`)\n      .setColor('${props.color || '#3b82f6'}');\n    await interaction.reply({ embeds: [embed] });\n`
       case 'wait':
         return `    await new Promise(r => setTimeout(r, ${(props.duration || 1) * 1000}));\n`
+      case 'call_module': {
+        const moduleName = props.moduleId || 'unknown_module'
+        const awaitKeyword = props.await !== false ? 'await ' : ''
+
+        if (language === 'js') {
+          return `    // Call Module: ${moduleName}\n    ${awaitKeyword}modules['${props.moduleId}'].execute(interaction);\n`
+        } else {
+          return `    # Call Module: ${moduleName}\n    ${awaitKeyword}await modules['${props.moduleId}'].execute(interaction)\n`
+        }
+      }
+
       case 'set_variable':
         return `    const ${props.name || 'v'} = \`${props.value}\`;\n`
       case 'http_request':
@@ -37,6 +66,29 @@ const generateActionCode = (action: Block, language: 'js' | 'py'): string => {
         return `    await interaction.guild.roles.create({ name: '${props.name || 'new-role'}', reason: 'System action' });\n`
       case 'channel_create':
         return `    await interaction.guild.channels.create({ name: '${props.name || 'new-channel'}' });\n`
+      case 'string_manipulation':
+        const strOp = props.operation
+        const strInput = props.input
+        if (strOp === 'split')
+          return `    const ${props.saveTo || 'strResult'} = "${strInput}".split(' ');\n`
+        if (strOp === 'join')
+          return `    const ${props.saveTo || 'strResult'} = "${strInput}".join(' ');\n`
+        if (strOp === 'replace')
+          return `    const ${props.saveTo || 'strResult'} = "${strInput}".replace('a', 'b');\n`
+        if (strOp === 'upper')
+          return `    const ${props.saveTo || 'strResult'} = "${strInput}".toUpperCase();\n`
+        if (strOp === 'lower')
+          return `    const ${props.saveTo || 'strResult'} = "${strInput}".toLowerCase();\n`
+        return `    // String Op: ${strOp}\n`
+      case 'math_advanced':
+        const mathOp = props.operation
+        if (mathOp === 'pow') return `    const ${props.saveTo || 'mathResult'} = Math.pow(2, 3);\n`
+        if (mathOp === 'sqrt') return `    const ${props.saveTo || 'mathResult'} = Math.sqrt(16);\n`
+        if (mathOp === 'round')
+          return `    const ${props.saveTo || 'mathResult'} = Math.round(10.5);\n`
+        if (mathOp === 'random_range')
+          return `    const ${props.saveTo || 'mathResult'} = Math.floor(Math.random() * 100);\n`
+        return `    // Math Op: ${mathOp}\n`
       default:
         return `    // Block Logic: ${action.type}\n`
     }
@@ -51,6 +103,27 @@ const generateActionCode = (action: Block, language: 'js' | 'py'): string => {
         return `    await asyncio.sleep(${props.duration || 1})\n`
       case 'http_request':
         return `    async with aiohttp.ClientSession() as session:\n        async with session.get("${props.url}") as resp:\n            ${props.saveTo || 'apiResult'} = await resp.json()\n`
+      case 'string_manipulation':
+        const strOp = props.operation
+        const strInput = props.input
+        if (strOp === 'split')
+          return `    ${props.saveTo || 'strResult'} = "${strInput}".split(' ')\n`
+        if (strOp === 'join')
+          return `    ${props.saveTo || 'strResult'} = " ".join("${strInput}")\n`
+        if (strOp === 'replace')
+          return `    ${props.saveTo || 'strResult'} = "${strInput}".replace('a', 'b')\n`
+        if (strOp === 'upper') return `    ${props.saveTo || 'strResult'} = "${strInput}".upper()\n`
+        if (strOp === 'lower') return `    ${props.saveTo || 'strResult'} = "${strInput}".lower()\n`
+        return `    # String Op: ${strOp}\n`
+      case 'math_advanced':
+        const mathOp = props.operation
+        if (mathOp === 'pow') return `    ${props.saveTo || 'mathResult'} = pow(2, 3)\n`
+        if (mathOp === 'sqrt')
+          return `    import math\n    ${props.saveTo || 'mathResult'} = math.sqrt(16)\n`
+        if (mathOp === 'round') return `    ${props.saveTo || 'mathResult'} = round(10.5)\n`
+        if (mathOp === 'random_range')
+          return `    import random\n    ${props.saveTo || 'mathResult'} = random.randint(0, 100)\n`
+        return `    # Math Op: ${mathOp}\n`
       case 'action_kick':
         return `    user = await interaction.guild.fetch_member(${props.userId})\n    await user.kick(reason="${props.reason || 'None'}")\n`
       case 'action_ban':
@@ -77,8 +150,63 @@ const generateActionCode = (action: Block, language: 'js' | 'py'): string => {
   }
 }
 
+interface Connection {
+  source: string
+  target: string
+  sourceHandle?: string | null
+  targetHandle?: string | null
+}
+
+const findNextBlock = (
+  currentId: string,
+  blocks: Block[],
+  connections: Connection[],
+  overrideTargetId?: string
+): Block | null => {
+  if (overrideTargetId) return blocks.find(b => b.id === overrideTargetId) || null
+  // If this is a branching block, we DO NOT automatically follow edges in the main loop
+  const currentBlock = blocks.find(b => b.id === currentId)
+  if (
+    currentBlock &&
+    ['if_condition', 'condition_has_role', 'condition_has_permission', 'loop'].includes(
+      currentBlock.type
+    )
+  ) {
+    return null
+  }
+
+  const connection = connections.find(c => c.source === currentId)
+  if (!connection) return null
+  return blocks.find(b => b.id === connection.target) || null
+}
+
+// Recursive flow generator
+function generateFlow(
+  entryBlockId: string,
+  allBlocks: Block[],
+  connections: Connection[],
+  lang: 'js' | 'py',
+  startTargetId?: string
+): string {
+  let code = ''
+  let currentBlock = findNextBlock(entryBlockId, allBlocks, connections, startTargetId)
+  const visited = new Set<string>()
+
+  while (currentBlock) {
+    if (visited.has(currentBlock.id)) break // Prevent loops
+    visited.add(currentBlock.id)
+
+    code += generateActionCode(currentBlock, allBlocks, connections, lang)
+    currentBlock = findNextBlock(currentBlock.id, allBlocks, connections)
+  }
+
+  if (code === '') return lang === 'js' ? '    // No actions connected\n' : '    pass\n'
+  return code
+}
+
 export const generateCode = (
   blocks: Block[],
+  connections: Connection[],
   language: 'discord.js' | 'discord.py' = 'discord.js'
 ): string => {
   if (blocks.length === 0) return '// No logic components detected in current workspace.'
@@ -87,11 +215,11 @@ export const generateCode = (
   let code = ''
 
   if (isJs) {
-    code += `// Generated by Industrial Bot Engine\n`
+    code += `// Generated by Cortex Engine V2\n`
     code += `const { Client, GatewayIntentBits, EmbedBuilder, ModalBuilder } = require('discord.js');\n`
     code += `const client = new Client({ intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMessages, GatewayIntentBits.GuildVoiceStates] });\n\n`
   } else {
-    code += `# Generated by Industrial Bot Engine\n`
+    code += `# Generated by Cortex Engine V2\n`
     code += `import discord\nimport asyncio\nimport aiohttp\nfrom discord.ext import commands\n\nbot = commands.Bot(command_prefix='!', intents=discord.Intents.all())\n\n`
   }
 
@@ -106,19 +234,26 @@ export const generateCode = (
     if (isJs) {
       code += `client.on('interactionCreate', async (interaction) => {\n`
       code += `  if (interaction.isChatInputCommand() && interaction.commandName === '${props.name || 'ping'}') {\n`
-      code += generateFlow(blocks, 'js')
-      code += `  }\n`
-      code += `  if (interaction.isUserContextMenuCommand() && interaction.commandName === '${props.name || 'User Logic'}') {\n`
-      code += generateFlow(blocks, 'js')
-      code += `  }\n`
-      code += `  if (interaction.isMessageContextMenuCommand() && interaction.commandName === '${props.name || 'Msg Logic'}') {\n`
-      code += generateFlow(blocks, 'js')
+      code += generateFlow(trigger.id, blocks, connections, 'js')
       code += `  }\n`
       code += `});\n\n`
     } else {
       code += `@bot.tree.command(name="${props.name || 'ping'}", description="${props.description || 'Command'}")\n`
       code += `async def ${props.name || 'cmd'}(interaction: discord.Interaction):\n`
-      code += generateFlow(blocks, 'py')
+      code += generateFlow(trigger.id, blocks, connections, 'py')
+      code += `\n`
+    }
+  })
+
+  eventTriggers.forEach(trigger => {
+    const props = trigger.data.properties
+    if (isJs) {
+      code += `client.on('${props.event || 'ready'}', async (ctx) => {\n`
+      code += generateFlow(trigger.id, blocks, connections, 'js')
+      code += `});\n\n`
+    } else {
+      code += `@bot.event\nasync def on_${props.event || 'ready'}():\n`
+      code += generateFlow(trigger.id, blocks, connections, 'py')
       code += `\n`
     }
   })
@@ -128,50 +263,22 @@ export const generateCode = (
     if (isJs) {
       code += `client.on('interactionCreate', async (interaction) => {\n`
       code += `  if (interaction.customId === '${props.customId}') {\n`
-      code += generateFlow(blocks, 'js')
+      code += generateFlow(trigger.id, blocks, connections, 'js')
       code += `  }\n`
       code += `});\n\n`
     } else {
       code += `@bot.event\nasync def on_interaction(interaction: discord.Interaction):\n`
       code += `    if interaction.data.get('custom_id') == "${props.customId}":\n`
-      code += `    ` + generateFlow(blocks, 'py').split('\n').join('\n    ')
+      code +=
+        `    ` + generateFlow(trigger.id, blocks, connections, 'py').split('\n').join('\n    ')
       code += `\n`
     }
   })
 
-  eventTriggers.forEach(trigger => {
-    const props = trigger.data.properties
-    if (isJs) {
-      code += `client.on('${props.event || 'ready'}', async (ctx) => {\n`
-      code += generateFlow(blocks, 'js')
-      code += `});\n\n`
-    } else {
-      code += `@bot.event\nasync def on_${props.event || 'ready'}():\n`
-      code += generateFlow(blocks, 'py')
-      code += `\n`
-    }
-  })
+  // Add more trigger types as needed...
 
   if (isJs) code += `client.login(process.env.TOKEN);`
   else code += `bot.run('TOKEN')`
 
   return code
-}
-
-function generateFlow(allBlocks: Block[], lang: 'js' | 'py'): string {
-  let flowCode = ''
-  // Sort by Y position for simple linear interpretation
-  const actions = allBlocks
-    .filter(b => b.data.category !== 'triggers')
-    .sort((a, b) => a.position.y - b.position.y)
-
-  if (actions.length === 0)
-    return lang === 'js'
-      ? `    // Define logic components to generate implementation.\n`
-      : `    pass\n`
-
-  actions.forEach(action => {
-    flowCode += generateActionCode(action, lang)
-  })
-  return flowCode
 }

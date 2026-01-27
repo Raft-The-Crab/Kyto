@@ -31,7 +31,7 @@ class DiscordApiService {
     // Mock guilds
     return [
       { id: '1', name: 'Developer Hub', icon: null, owner: true, permissions: '8' },
-      { id: '2', name: 'Botify Official', icon: null, owner: false, permissions: '0' },
+      { id: '2', name: 'Kyto Official', icon: null, owner: false, permissions: '0' },
     ]
   }
 

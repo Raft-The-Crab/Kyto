@@ -1,4 +1,3 @@
-import { ComponentProps } from 'react'
 import {
   Dialog,
   DialogContent,
@@ -10,7 +9,7 @@ import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 import { Label } from '@/components/ui/Label'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/Tabs'
-import { User, CreditCard, Key, Palette, Settings } from 'lucide-react'
+import { User, Key, Palette, Settings } from 'lucide-react'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/Avatar'
 import { useTheme } from '@/components/providers/ThemeProvider'
 
@@ -40,7 +39,6 @@ export function SettingsDialog({ open, onOpenChange }: SettingsDialogProps) {
               </h2>
               <TabsList className="flex flex-col h-auto bg-transparent gap-1 p-0 justify-start w-full">
                 <SettingsTab value="account" icon={User} label="Account" />
-                <SettingsTab value="billing" icon={CreditCard} label="Billing" />
                 <SettingsTab value="api" icon={Key} label="API Keys" />
                 <SettingsTab value="appearance" icon={Palette} label="Appearance" />
               </TabsList>
@@ -84,7 +82,7 @@ export function SettingsDialog({ open, onOpenChange }: SettingsDialogProps) {
                     </Label>
                     <Input
                       id="email"
-                      defaultValue="jacob@botify.app"
+                      defaultValue="jacob@kyto.app"
                       className="dark:bg-slate-900 dark:border-slate-700"
                     />
                   </div>
@@ -98,7 +96,7 @@ export function SettingsDialog({ open, onOpenChange }: SettingsDialogProps) {
                 <div>
                   <h3 className="text-2xl font-bold text-slate-900 dark:text-white">Appearance</h3>
                   <p className="text-slate-500 dark:text-slate-400 font-medium">
-                    Customize how Botify looks on your device.
+                    Customize how Kyto looks on your device.
                   </p>
                 </div>
                 <div className="space-y-4">
@@ -110,26 +108,6 @@ export function SettingsDialog({ open, onOpenChange }: SettingsDialogProps) {
                     <ThemeCard mode="dark" current={theme} onClick={() => setTheme('dark')} />
                     <ThemeCard mode="system" current={theme} onClick={() => setTheme('system')} />
                   </div>
-                </div>
-              </TabsContent>
-
-              <TabsContent value="billing" className="space-y-6 mt-0">
-                <div>
-                  <h3 className="text-2xl font-bold text-slate-900 dark:text-white">Billing</h3>
-                  <p className="text-slate-500 dark:text-slate-400 font-medium">
-                    Manage your subscription.
-                  </p>
-                </div>
-                <div className="p-6 border-2 border-slate-900 dark:border-slate-700 rounded-2xl bg-slate-50 dark:bg-slate-900 shadow-neo-sm">
-                  <h4 className="font-bold text-lg mb-2 text-slate-900 dark:text-white">
-                    Free Plan
-                  </h4>
-                  <p className="text-slate-500 dark:text-slate-400 text-sm mb-4">
-                    You are currently on the free tier.
-                  </p>
-                  <Button className="bg-indigo-600 hover:bg-indigo-700 text-white font-black shadow-neo-sm">
-                    Upgrade to Pro
-                  </Button>
                 </div>
               </TabsContent>
 

@@ -1,4 +1,6 @@
-import { User, Settings, CreditCard, LogOut, Moon, Sun, Laptop } from 'lucide-react'
+import { useNavigate } from 'react-router-dom'
+import { toast } from 'sonner'
+import { User, Settings, LogOut, Moon, Sun, Laptop } from 'lucide-react'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -22,6 +24,12 @@ interface UserMenuProps {
 
 export function UserMenu({ onOpenSettings }: UserMenuProps) {
   const { setTheme } = useTheme()
+  const navigate = useNavigate()
+
+  const handleLogout = () => {
+    toast.success('Logged out successfully')
+    navigate('/login')
+  }
 
   return (
     <DropdownMenu>
@@ -37,7 +45,7 @@ export function UserMenu({ onOpenSettings }: UserMenuProps) {
         <DropdownMenuLabel className="font-normal">
           <div className="flex flex-col space-y-1">
             <p className="text-sm font-medium leading-none">Jacob B.</p>
-            <p className="text-xs leading-none text-muted-foreground">jacob@botify.app</p>
+            <p className="text-xs leading-none text-muted-foreground">jacob@kyto.app</p>
           </div>
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
@@ -45,10 +53,6 @@ export function UserMenu({ onOpenSettings }: UserMenuProps) {
           <DropdownMenuItem onClick={onOpenSettings}>
             <User className="mr-2 h-4 w-4" />
             <span>Profile</span>
-          </DropdownMenuItem>
-          <DropdownMenuItem onClick={onOpenSettings}>
-            <CreditCard className="mr-2 h-4 w-4" />
-            <span>Billing</span>
           </DropdownMenuItem>
           <DropdownMenuItem onClick={onOpenSettings}>
             <Settings className="mr-2 h-4 w-4" />
@@ -81,7 +85,10 @@ export function UserMenu({ onOpenSettings }: UserMenuProps) {
           </DropdownMenuSub>
         </DropdownMenuGroup>
         <DropdownMenuSeparator />
-        <DropdownMenuItem className="text-red-600 focus:text-red-600">
+        <DropdownMenuItem
+          onClick={handleLogout}
+          className="text-red-600 focus:text-red-600 cursor-pointer"
+        >
           <LogOut className="mr-2 h-4 w-4" />
           <span>Log out</span>
         </DropdownMenuItem>

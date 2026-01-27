@@ -29,107 +29,178 @@
   --color-card: var(--card);
   --color-card-foreground: var(--card-foreground);
 
-  --radius: 0px; /* Neo-Brutalism: Hard corners */
+  --radius: 0.5rem;
+  --radius-sm: 0.3rem;
+  --radius-lg: 0.8rem;
 
-  --shadow-neo: var(--shadow-neo);
-  --shadow-neo-lg: var(--shadow-neo-lg);
-  --shadow-neo-sm: var(--shadow-neo-sm);
-}
+  --animate-float: float 6s ease-in-out infinite;
+  --animate-glow: glow 2s ease-in-out infinite alternate;
+  --animate-fade-in-up: fadeInUp 0.5s ease-out forwards;
+  --animate-pulse-glow: pulseGlow 3s infinite;
 
-/* Hard Neo-Brutalism Implementation */
-@utility shadow-neo {
-  box-shadow: 4px 4px 0px 0px rgba(0, 0, 0, 1);
-}
-@utility shadow-neo-lg {
-  box-shadow: 8px 8px 0px 0px rgba(0, 0, 0, 1);
-}
-@utility shadow-neo-sm {
-  box-shadow: 2px 2px 0px 0px rgba(0, 0, 0, 1);
+  @keyframes float {
+    0% {
+      transform: translateY(0px);
+    }
+    50% {
+      transform: translateY(-20px);
+    }
+    100% {
+      transform: translateY(0px);
+    }
+  }
+  @keyframes glow {
+    from {
+      box-shadow: 0 0 10px -10px var(--color-primary);
+    }
+    to {
+      box-shadow: 0 0 20px 5px var(--color-primary);
+    }
+  }
+  @keyframes fadeInUp {
+    from {
+      opacity: 0;
+      transform: translateY(10px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+  @keyframes pulseGlow {
+    0%,
+    100% {
+      opacity: 0.5;
+      transform: scale(1);
+    }
+    50% {
+      opacity: 1;
+      transform: scale(1.05);
+    }
+  }
 }
 
 @layer base {
+  /* Scrollbar Styling */
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: hsl(217, 33%, 30%) transparent;
+  }
+  *::-webkit-scrollbar {
+    width: 6px;
+  }
+  *::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  *::-webkit-scrollbar-thumb {
+    background-color: hsl(217, 33%, 30%);
+    border-radius: 20px;
+  }
+
   :root {
-    --background: hsl(45 100% 96%); /* Off-white / Cream */
-    --foreground: hsl(0 0% 0%);
-    --card: hsl(45 100% 96%);
-    --card-foreground: hsl(0 0% 0%);
-    --popover: hsl(45 100% 96%);
-    --popover-foreground: hsl(0 0% 0%);
-    --primary: hsl(246 100% 64%);
-    --primary-foreground: hsl(0 0% 100%);
-    --secondary: hsl(150 100% 45%); /* High contrast green */
-    --secondary-foreground: hsl(0 0% 0%);
-    --muted: hsl(0 0% 90%);
-    --muted-foreground: hsl(0 0% 40%);
-    --accent: hsl(300 100% 60%); /* Vibrant pink */
-    --accent-foreground: hsl(0 0% 100%);
-    --destructive: hsl(0 100% 50%);
-    --destructive-foreground: hsl(0 0% 100%);
-    --border: hsl(0 0% 0%); /* Hard Black Borders */
-    --input: hsl(0 0% 0%);
-    --ring: hsl(0 0% 0%);
+    /* Premium Glassmorphism Dark Mode Palette */
+    --background: hsl(222 47% 11%); /* Deep Blue/Slate */
+    --foreground: hsl(210 40% 98%);
+
+    --card: hsl(222 47% 11% / 0.7);
+    --card-foreground: hsl(210 40% 98%);
+
+    --popover: hsl(222 47% 11% / 0.9);
+    --popover-foreground: hsl(210 40% 98%);
+
+    --primary: hsl(262 83% 58%); /* Vibrant Violet */
+    --primary-foreground: hsl(210 40% 98%);
+
+    --secondary: hsl(217 33% 17%);
+    --secondary-foreground: hsl(210 40% 98%);
+
+    --muted: hsl(217 33% 17%);
+    --muted-foreground: hsl(215 20% 65%);
+
+    --accent: hsl(262 83% 58%);
+    --accent-foreground: hsl(210 40% 98%);
+
+    --destructive: hsl(0 62% 30%);
+    --destructive-foreground: hsl(210 40% 98%);
+
+    --border: hsl(217 33% 20%);
+    --input: hsl(217 33% 17%);
+    --ring: hsl(262 83% 58%);
   }
 
-  .dark {
-    --background: hsl(0 0% 5%);
-    --foreground: hsl(45 100% 96%);
-    --card: hsl(0 0% 8%);
-    --card-foreground: hsl(45 100% 96%);
-    --popover: hsl(0 0% 8%);
-    --popover-foreground: hsl(45 100% 96%);
+  /* Glassmorphism Utilities */
+  .glass-panel {
+    @apply bg-slate-900/60 backdrop-blur-xl border border-white/5 shadow-xl;
+    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
+  }
 
-    --primary: hsl(246 100% 70%);
-    --secondary: hsl(150 100% 45%);
-    --accent: hsl(300 100% 65%);
-    --border: hsl(45 100% 96%); /* Hard White Borders */
+  .glass-card {
+    @apply bg-white/5 backdrop-blur-lg border border-white/10 rounded-xl transition-all duration-300;
+  }
 
-    /* Dark mode shadow inverse */
-    --shadow-neo: 4px 4px 0px 0px rgba(45, 255, 96, 0.4);
+  .glass-card:hover {
+    @apply bg-white/10 border-white/20 shadow-lg -translate-y-1;
+    box-shadow: 0 10px 40px -10px rgba(124, 58, 237, 0.2);
+  }
+
+  .glass-button {
+    @apply bg-white/5 hover:bg-white/10 border border-white/5 backdrop-blur-md transition-all duration-300 active:scale-95;
+  }
+
+  body {
+    @apply bg-background text-foreground font-sans antialiased selection:bg-primary/30;
+    background-image:
+      radial-gradient(circle at 15% 50%, rgba(124, 58, 237, 0.08), transparent 25%),
+      radial-gradient(circle at 85% 30%, rgba(59, 130, 246, 0.08), transparent 25%),
+      radial-gradient(at 0% 0%, hsla(253, 16%, 7%, 1) 0, transparent 50%),
+      radial-gradient(at 50% 0%, hsla(225, 39%, 30%, 1) 0, transparent 50%),
+      radial-gradient(at 100% 0%, hsla(339, 49%, 30%, 1) 0, transparent 50%);
+    background-attachment: fixed;
   }
 }
 
-body {
-  @apply bg-background text-foreground font-mono transition-colors duration-300 antialiased;
-}
-
-/* Global Industrial Overrides */
-* {
-  @apply border-foreground;
-}
-
-button,
-input,
-select,
-textarea,
-div.card {
-  @apply border-2 border-slate-900 shadow-neo transition-all active:translate-x-[2px] active:translate-y-[2px] active:shadow-none;
-}
-
-/* React Flow Overhaul */
+/* React Flow Customization */
 .react-flow__background {
-  @apply bg-[radial-gradient(#000_1px,transparent_1px)] bg-[size:24px_24px] opacity-10;
+  @apply opacity-20;
 }
 
 .react-flow__node {
-  @apply rounded-none border-4 border-slate-900 shadow-neo bg-white dark:bg-slate-900 !important;
+  @apply rounded-xl border border-white/10 bg-slate-900/80 backdrop-blur-md shadow-2xl;
+  border-color: rgba(255, 255, 255, 0.1) !important;
+  background-color: rgba(15, 23, 42, 0.8) !important;
+}
+
+.react-flow__node:hover {
+  @apply border-primary/50 shadow-primary/20;
+  border-color: var(--color-primary) !important;
 }
 
 .react-flow__node.selected {
-  @apply border-indigo-600 ring-4 ring-indigo-600/20 !important;
+  @apply border-primary ring-2 ring-primary/20;
+  border-color: var(--color-primary) !important;
+  box-shadow:
+    0 0 0 2px var(--color-primary-foreground),
+    0 0 0 4px rgba(139, 92, 246, 0.2) !important;
 }
 
 .react-flow__handle {
-  @apply w-4 h-4 bg-white border-3 border-slate-900 rounded-none shadow-neo-sm;
+  @apply w-3 h-3 bg-slate-900 border-2 border-primary rounded-full transition-transform hover:scale-125;
+  background-color: rgb(15, 23, 42) !important;
+  border-color: var(--color-primary) !important;
 }
 
 .react-flow__edge-path {
-  @apply stroke-slate-900 stroke-[4px];
+  stroke: #94a3b8 !important;
+  stroke-width: 2px !important;
 }
 
 .react-flow__controls {
-  @apply border-4 border-slate-900 shadow-neo rounded-none !important;
+  @apply bg-slate-900/80 border border-white/10 rounded-lg overflow-hidden backdrop-blur-md;
+  background-color: rgba(15, 23, 42, 0.8) !important;
+  border-color: rgba(255, 255, 255, 0.1) !important;
 }
 
 .react-flow__controls-button {
-  @apply border-r-4 border-slate-900 last:border-r-0 !important;
+  @apply border-b border-white/5 hover:bg-white/10;
+  border-bottom-color: rgba(255, 255, 255, 0.05) !important;
 }

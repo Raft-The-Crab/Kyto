@@ -23,7 +23,7 @@ const ThemeProviderContext = createContext<ThemeProviderState>(initialState)
 export function ThemeProvider({
   children,
   defaultTheme = 'system',
-  storageKey = 'botify-ui-theme',
+  storageKey = 'kyto-ui-theme',
 }: ThemeProviderProps) {
   const [theme, setTheme] = useState<Theme>(
     () => (localStorage.getItem(storageKey) as Theme) || defaultTheme
@@ -39,10 +39,12 @@ export function ThemeProvider({
         ? 'dark'
         : 'light'
       root.classList.add(systemTheme)
+      root.setAttribute('data-theme', systemTheme)
       return
     }
 
     root.classList.add(theme)
+    root.setAttribute('data-theme', theme)
 
     // For specific dark mode handling in tailwind if mostly reliant on 'dark' class
     if (theme === 'dark' || theme === 'cyber') {

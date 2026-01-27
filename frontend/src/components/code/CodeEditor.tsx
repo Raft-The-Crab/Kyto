@@ -9,55 +9,62 @@ interface CodeEditorProps {
 }
 
 export function CodeEditor({ readOnly = false }: CodeEditorProps) {
-  const { blocks } = useEditorStore()
+  const { blocks, connections } = useEditorStore()
   const { language, settings, activeFileId, name, description } = useProjectStore()
 
   const content = useMemo(() => {
-    switch (activeFileId) {
-      case 'main':
-        return generateCode(blocks)
-      case 'settings':
-        return JSON.stringify(
-          {
-            name,
-            description,
-            language,
-            settings: {
-              prefix: settings.prefix,
-              intents: settings.intents,
-              clientId: settings.clientId,
-            },
-          },
-          null,
-          2
-        )
-      case 'env':
-        return `DISCORD_TOKEN=${settings.botToken || 'YOUR_TOKEN_HERE'}\nCLIENT_ID=${settings.clientId || 'YOUR_CLIENT_ID'}\nPREFIX=${settings.prefix}`
-      case 'pkg':
-        if (language === 'discord.js') {
+    try {
+      switch (activeFileId) {
+        case 'main':
+          if (!blocks) return '// No blocks found'
+          return generateCode(blocks, connections, language as 'discord.js' | 'discord.py')
+        case 'settings':
           return JSON.stringify(
             {
-              name: name.toLowerCase().replace(/\s+/g, '-'),
-              version: '1.0.0',
-              description,
-              main: 'index.js',
-              dependencies: {
-                'discord.js': '^14.13.0',
-                dotenv: '^16.3.1',
+              name: name || 'Untitled',
+              description: description || '',
+              language: language || 'discord.js',
+              settings: {
+                prefix: settings?.prefix || '!',
+                intents: settings?.intents || [],
+                clientId: settings?.clientId || '',
               },
             },
             null,
             2
           )
-        } else {
-          return `discord.py==2.3.2\npython-dotenv==1.0.0`
-        }
-      default:
-        return '// No file selected'
+        case 'env':
+          return `DISCORD_TOKEN=${settings?.botToken || 'YOUR_TOKEN_HERE'}\nCLIENT_ID=${settings?.clientId || 'YOUR_CLIENT_ID'}\nPREFIX=${settings?.prefix || '!'}`
+        case 'pkg':
+          if (language === 'discord.js') {
+            return JSON.stringify(
+              {
+                name: (name || 'bot').toLowerCase().replace(/\s+/g, '-'),
+                version: '1.0.0',
+                description: description || '',
+                main: 'index.js',
+                dependencies: {
+                  'discord.js': '^14.13.0',
+                  dotenv: '^16.3.1',
+                },
+              },
+              null,
+              2
+            )
+          } else {
+            return `discord.py==2.3.2\npython-dotenv==1.0.0`
+          }
+        default:
+          return '// Select a file to view content'
+      }
+    } catch (error) {
+      console.error('Code Generation Error:', error)
+      return '// Error generating code. Please check console.'
     }
   }, [activeFileId, blocks, language, settings, name, description])
 
   const editorLanguage = useMemo(() => {
+    if (!activeFileId) return 'text'
     if (activeFileId === 'settings' || (activeFileId === 'pkg' && language === 'discord.js'))
       return 'json'
     if (activeFileId === 'env' || (activeFileId === 'pkg' && language === 'discord.py'))
