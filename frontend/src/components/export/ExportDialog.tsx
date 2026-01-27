@@ -4,6 +4,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { Button } from '../ui/Button'
 import { apiClient } from '@/services/api'
 import { ExportPreviewDialog } from './ExportPreviewDialog'
+import { GitHubExportDialog } from './GitHubExportDialog'
 
 interface ExportDialogProps {
   open: boolean
@@ -18,6 +19,7 @@ export function ExportDialog({ open, onClose, canvas, settings }: ExportDialogPr
   const [exportData, setExportData] = useState<any>(null)
   const [previewOpen, setPreviewOpen] = useState(false)
   const [previewFiles, setPreviewFiles] = useState<any[]>([])
+  const [ghOpen, setGhOpen] = useState(false)
 
   const handleExport = async () => {
     setLoading(true)
@@ -157,16 +159,23 @@ export function ExportDialog({ open, onClose, canvas, settings }: ExportDialogPr
                   <Download className="w-5 h-5 mr-2" />
                   Download ZIP
                 </Button>
+                <Button onClick={() => setGhOpen(true)} size="lg" variant="outline" className="w-full">
+                  <Download className="w-5 h-5 mr-2" />
+                  Export to GitHub
+                </Button>
               </div>
             </div>
           )}
-        </div>
         </div>
       </DialogContent>
 
       {/* Export preview dialog */}
       {previewOpen && (
         <ExportPreviewDialog open={previewOpen} onClose={() => setPreviewOpen(false)} files={previewFiles} />
+      )}
+
+      {ghOpen && (
+        <GitHubExportDialog open={ghOpen} onClose={() => setGhOpen(false)} files={(exportData && exportData.files) || []} />
       )}
     </Dialog>
   )
