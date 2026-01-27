@@ -49,6 +49,7 @@ function EditorCanvasInner({ entityId, onBlockDragStart, draggedBlockType }: Edi
 
   // Local UI state
   const [snapToGrid, setSnapToGrid] = useState<boolean>(true)
+  const [showGrid, setShowGrid] = useState<boolean>(false)
 
   const {
     blocks,
@@ -314,12 +315,40 @@ function EditorCanvasInner({ entityId, onBlockDragStart, draggedBlockType }: Edi
     toast.success('Blocks auto-arranged.')
   }, [nodes.length, setNodes, updateBlock, fitView])
 
-  // Keyboard shortcuts: A = auto-arrange, +/- = zoom, Ctrl/Cmd+0 = reset/fit
+  // Move / Nudge selected node by dx/dy in flow coords
+  const moveSelected = useCallback(
+    (dx: number, dy: number) => {
+      if (!selectedBlockId) return
+      const block = blocks.find(b => b.id === selectedBlockId)
+      if (!block) return
+      const snap = (v: number) => (snapToGrid ? Math.round(v / 8) * 8 : v)
+      const newPos = { x: snap(block.position.x + dx), y: snap(block.position.y + dy) }
+      updateBlock(selectedBlockId, { position: newPos })
+      setNodes(prev => prev.map(n => (n.id === selectedBlockId ? { ...n, position: newPos } : n)))
+    },
+    [selectedBlockId, blocks, snapToGrid, updateBlock, setNodes]
+  )
+
+  const centerSelected = useCallback(() => {
+    if (!selectedBlockId) return
+    // Center on screen: convert screen center to flow position
+    const center = screenToFlowPosition({ x: window.innerWidth / 2, y: window.innerHeight / 2 })
+    const block = blocks.find(b => b.id === selectedBlockId)
+    if (!block) return
+    const newPos = { x: Math.round(center.x - 120), y: Math.round(center.y - 40) }
+    updateBlock(selectedBlockId, { position: newPos })
+    setNodes(prev => prev.map(n => (n.id === selectedBlockId ? { ...n, position: newPos } : n)))
+    toast.success('Block centered in viewport.')
+  }, [selectedBlockId, screenToFlowPosition, blocks, updateBlock, setNodes])
+
+  // Keyboard shortcuts: A = auto-arrange, +/- = zoom, Ctrl/Cmd+0 = reset/fit, arrows = nudge
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       // prevent typing in inputs from triggering actions
       const active = document.activeElement
       if (active && (active.tagName === 'INPUT' || active.tagName === 'TEXTAREA' || (active as HTMLElement).isContentEditable)) return
+
+      const nudgeAmount = e.shiftKey ? 32 : 8
 
       if (e.key === 'a' || e.key === 'A') {
         autoArrange()
@@ -329,6 +358,14 @@ function EditorCanvasInner({ entityId, onBlockDragStart, draggedBlockType }: Edi
         zoomOut()
       } else if ((e.ctrlKey || e.metaKey) && e.key === '0') {
         resetZoom()
+      } else if (e.key === 'ArrowLeft') {
+        moveSelected(-nudgeAmount, 0)
+      } else if (e.key === 'ArrowRight') {
+        moveSelected(nudgeAmount, 0)
+      } else if (e.key === 'ArrowUp') {
+        moveSelected(0, -nudgeAmount)
+      } else if (e.key === 'ArrowDown') {
+        moveSelected(0, nudgeAmount)
       }
     }
 
@@ -360,6 +397,19 @@ function EditorCanvasInner({ entityId, onBlockDragStart, draggedBlockType }: Edi
           size={2}
           color="rgba(99, 102, 241, 0.12)"
         />
+
+        {/* Optional grid overlay when user toggles Grid */}
+        {showGrid && (
+          <div
+            aria-hidden="true"
+            className="pointer-events-none absolute inset-0 opacity-40"
+            style={{
+              backgroundImage:
+                'linear-gradient(to right, rgba(200,200,200,0.06) 1px, transparent 1px), linear-gradient(to bottom, rgba(200,200,200,0.06) 1px, transparent 1px)',
+              backgroundSize: '24px 24px, 24px 24px',
+            }}
+          />
+        )}
         <Panel position="top-right" className="m-6 pointer-events-none">
           <div className="bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border-2 border-black/10 dark:border-slate-800 rounded-2xl p-3 shadow-neo-sm flex items-center gap-4 text-[10px] font-black uppercase tracking-widest text-slate-500 pointer-events-auto transition-all">
             <div className="flex items-center gap-4">
@@ -431,6 +481,71 @@ function EditorCanvasInner({ entityId, onBlockDragStart, draggedBlockType }: Edi
               >
                 Snap
               </button>
+
+              {/* Grid toggle */}
+              <button
+                type="button"
+                aria-pressed={showGrid}
+                aria-label={showGrid ? 'Hide grid' : 'Show grid'}
+                onClick={() => setShowGrid(s => !s)}
+                className={"px-2 py-1 rounded-md text-xs " + (showGrid ? 'bg-indigo-600 text-white' : 'bg-slate-100 dark:bg-slate-800')}
+                title={showGrid ? 'Hide grid' : 'Show grid'}
+              >
+                Grid
+              </button>
+
+              {/* Nudge / Center controls */}
+              <button
+                type="button"
+                aria-label="Center selected block"
+                className="px-2 py-1 rounded-md text-xs bg-slate-100 dark:bg-slate-800"
+                onClick={centerSelected}
+                title="Center selected block"
+              >
+                Center
+              </button>
+
+              <div className="flex items-center gap-1">
+                <button
+                  type="button"
+                  aria-label="Nudge left"
+                  className="px-2 py-1 rounded-md text-xs bg-slate-100 dark:bg-slate-800"
+                  onClick={() => moveSelected(-8, 0)}
+                  title="Nudge left"
+                >
+                  ←
+                </button>
+
+                <button
+                  type="button"
+                  aria-label="Nudge right"
+                  className="px-2 py-1 rounded-md text-xs bg-slate-100 dark:bg-slate-800"
+                  onClick={() => moveSelected(8, 0)}
+                  title="Nudge right"
+                >
+                  →
+                </button>
+
+                <button
+                  type="button"
+                  aria-label="Nudge up"
+                  className="px-2 py-1 rounded-md text-xs bg-slate-100 dark:bg-slate-800"
+                  onClick={() => moveSelected(0, -8)}
+                  title="Nudge up"
+                >
+                  ↑
+                </button>
+
+                <button
+                  type="button"
+                  aria-label="Nudge down"
+                  className="px-2 py-1 rounded-md text-xs bg-slate-100 dark:bg-slate-800"
+                  onClick={() => moveSelected(0, 8)}
+                  title="Nudge down"
+                >
+                  ↓
+                </button>
+              </div>
             </div>
           </div>
         </Panel>

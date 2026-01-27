@@ -28,7 +28,7 @@ export const CustomBlockNode = memo(({ data, selected }: NodeProps<Node<CustomNo
   return (
     <div
       className={cn(
-        'relative group min-w-[140px]', // Reduced width
+        'relative group min-w-[140px] transition-transform duration-200 ease-out will-change-transform', // Reduced width + smooth transitions
         selected ? 'z-50' : 'z-10'
       )}
     >
