@@ -24,19 +24,19 @@
   "author": "Jacob",
   "license": "PROPRIETARY",
   "dependencies": {
-    "hono": "^4.0.0",
-    "@hono/zod-validator": "^0.2.0",
     "@hono/node-server": "^1.8.0",
-    "zod": "^3.22.4",
+    "@hono/zod-validator": "^0.2.0",
+    "acorn": "^8.10.0",
+    "hono": "^4.0.0",
+    "jszip": "^3.10.1",
     "node-fetch": "^3.3.2",
     "pg": "^8.11.0",
     "ws": "^8.16.0",
-    "acorn": "^8.10.0",
-    "jszip": "^4.0.0"
+    "zod": "^3.22.4"
   },
   "devDependencies": {
     "@types/node": "^20.11.0",
-    "@types/ws": "^8.5.10",
+    "@types/ws": "^8.18.1",
     "tsx": "^4.7.0",
     "typescript": "^5.3.3",
     "vitest": "^1.2.1"

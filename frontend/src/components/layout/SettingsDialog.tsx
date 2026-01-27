@@ -108,6 +108,46 @@ export function SettingsDialog({ open, onOpenChange }: SettingsDialogProps) {
                     <ThemeCard mode="dark" current={theme} onClick={() => setTheme('dark')} />
                     <ThemeCard mode="system" current={theme} onClick={() => setTheme('system')} />
                   </div>
+
+                  <div className="mt-6">
+                    <h4 className="font-bold text-sm uppercase tracking-widest text-slate-400 mb-3">
+                      Editor Preferences
+                    </h4>
+
+                    <div className="flex flex-col gap-3">
+                      <label className="flex items-center justify-between gap-4 p-3 rounded-lg border border-slate-200 dark:border-slate-800">
+                        <div>
+                          <div className="font-bold">Snap to grid</div>
+                          <div className="text-xs text-slate-500">Automatically snap nodes to a grid while dragging</div>
+                        </div>
+                        <input
+                          type="checkbox"
+                          defaultChecked={localStorage.getItem('kyto_snap') !== 'false'}
+                          onChange={(e) => {
+                            const v = e.target.checked
+                            localStorage.setItem('kyto_snap', String(v))
+                            window.dispatchEvent(new CustomEvent('kyto:preferences', { detail: { snapToGrid: v } }))
+                          }}
+                        />
+                      </label>
+
+                      <label className="flex items-center justify-between gap-4 p-3 rounded-lg border border-slate-200 dark:border-slate-800">
+                        <div>
+                          <div className="font-bold">Show grid</div>
+                          <div className="text-xs text-slate-500">Display a background grid to help positioning</div>
+                        </div>
+                        <input
+                          type="checkbox"
+                          defaultChecked={localStorage.getItem('kyto_grid') === 'true'}
+                          onChange={(e) => {
+                            const v = e.target.checked
+                            localStorage.setItem('kyto_grid', String(v))
+                            window.dispatchEvent(new CustomEvent('kyto:preferences', { detail: { showGrid: v } }))
+                          }}
+                        />
+                      </label>
+                    </div>
+                  </div>
                 </div>
               </TabsContent>
 

@@ -48,8 +48,20 @@ function EditorCanvasInner({ entityId, onBlockDragStart, draggedBlockType }: Edi
   const lastStoreConnections = useRef<string>('')
 
   // Local UI state
-  const [snapToGrid, setSnapToGrid] = useState<boolean>(true)
-  const [showGrid, setShowGrid] = useState<boolean>(false)
+  const [snapToGrid, setSnapToGrid] = useState<boolean>(() => {
+    try {
+      return localStorage.getItem('kyto_snap') !== 'false'
+    } catch (e) {
+      return true
+    }
+  })
+  const [showGrid, setShowGrid] = useState<boolean>(() => {
+    try {
+      return localStorage.getItem('kyto_grid') === 'true'
+    } catch (e) {
+      return false
+    }
+  })
 
   const {
     blocks,
@@ -369,8 +381,18 @@ function EditorCanvasInner({ entityId, onBlockDragStart, draggedBlockType }: Edi
       }
     }
 
+    const onPref = (ev: Event) => {
+      const detail = (ev as CustomEvent).detail || {}
+      if (typeof detail.snapToGrid === 'boolean') setSnapToGrid(detail.snapToGrid)
+      if (typeof detail.showGrid === 'boolean') setShowGrid(detail.showGrid)
+    }
+
     window.addEventListener('keydown', onKey)
-    return () => window.removeEventListener('keydown', onKey)
+    window.addEventListener('kyto:preferences', onPref as EventListener)
+    return () => {
+      window.removeEventListener('keydown', onKey)
+      window.removeEventListener('kyto:preferences', onPref as EventListener)
+    }
   }, [autoArrange, zoomIn, zoomOut, resetZoom])
 
   return (
@@ -475,7 +497,14 @@ function EditorCanvasInner({ entityId, onBlockDragStart, draggedBlockType }: Edi
                 type="button"
                 aria-pressed={snapToGrid}
                 aria-label={snapToGrid ? 'Disable snap to grid' : 'Enable snap to grid'}
-                onClick={() => setSnapToGrid(s => !s)}
+                onClick={() => {
+                  const next = !snapToGrid
+                  setSnapToGrid(next)
+                  try {
+                    localStorage.setItem('kyto_snap', String(next))
+                    window.dispatchEvent(new CustomEvent('kyto:preferences', { detail: { snapToGrid: next } }))
+                  } catch (e) {}
+                }}
                 className={"px-2 py-1 rounded-md text-xs " + (snapToGrid ? 'bg-indigo-600 text-white' : 'bg-slate-100 dark:bg-slate-800')}
                 title={snapToGrid ? 'Snap-to-grid: ON' : 'Snap-to-grid: OFF'}
               >
@@ -487,7 +516,14 @@ function EditorCanvasInner({ entityId, onBlockDragStart, draggedBlockType }: Edi
                 type="button"
                 aria-pressed={showGrid}
                 aria-label={showGrid ? 'Hide grid' : 'Show grid'}
-                onClick={() => setShowGrid(s => !s)}
+                onClick={() => {
+                  const next = !showGrid
+                  setShowGrid(next)
+                  try {
+                    localStorage.setItem('kyto_grid', String(next))
+                    window.dispatchEvent(new CustomEvent('kyto:preferences', { detail: { showGrid: next } }))
+                  } catch (e) {}
+                }}
                 className={"px-2 py-1 rounded-md text-xs " + (showGrid ? 'bg-indigo-600 text-white' : 'bg-slate-100 dark:bg-slate-800')}
                 title={showGrid ? 'Hide grid' : 'Show grid'}
               >
