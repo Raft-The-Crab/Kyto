@@ -75,6 +75,105 @@ exportRoutes.post("/", zValidator("json", exportSchema), async (c) => {
   }
 });
 
+// POST /api/export/github - Commit files to GitHub using a provided token
+const githubSchema = z.object({
+  token: z.string().min(10),
+  owner: z.string().min(1),
+  repo: z.string().min(1),
+  branch: z.string().optional(),
+  message: z.string().optional(),
+  files: z.array(z.object({ path: z.string(), content: z.string() })),
+});
+
+exportRoutes.post('/github', zValidator('json', githubSchema), async (c) => {
+  try {
+    const body = c.req.valid('json') as any
+    const { token, owner, repo, branch = 'main', message } = body
+    const files: Array<{ path: string; content: string }> = body.files || []
+
+    if (!token || !owner || !repo || files.length === 0) {
+      return c.json({ error: 'Missing parameters or no files to commit' }, 400)
+    }
+
+    const headers = {
+      Authorization: `token ${token}`,
+      Accept: 'application/vnd.github+json',
+      'Content-Type': 'application/json',
+    }
+
+    // Verify token by fetching user
+    const userResp = await fetch('https://api.github.com/user', { headers })
+    if (!userResp.ok) {
+      const text = await userResp.text()
+      return c.json({ error: `Invalid token: ${text}` }, 401)
+    }
+
+    // Ensure repo exists (and is accessible)
+    const repoUrl = `https://api.github.com/repos/${owner}/${repo}`
+    let repoResp = await fetch(repoUrl, { headers })
+
+    if (repoResp.status === 404) {
+      // Try to create repository under authenticated user (owner must match)
+      const createResp = await fetch('https://api.github.com/user/repos', {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({ name: repo, private: false }),
+      })
+
+      if (!createResp.ok) {
+        const text = await createResp.text()
+        return c.json({ error: `Failed to create repo: ${text}` }, 400)
+      }
+    } else if (!repoResp.ok) {
+      const text = await repoResp.text()
+      return c.json({ error: `Failed to access repo: ${text}` }, 400)
+    }
+
+    // For each file, create or update via the GitHub contents API
+    const results: Array<{ path: string; status: string; detail?: string }> = []
+
+    for (const f of files) {
+      try {
+        const url = `https://api.github.com/repos/${owner}/${repo}/contents/${encodeURIComponent(f.path)}`
+        const getResp = await fetch(url, { headers })
+        let sha: string | undefined
+        if (getResp.ok) {
+          const json = await getResp.json()
+          sha = json.sha
+        }
+
+        const payload: any = {
+          message: message || `Add ${f.path} via Kyto export`,
+          content: Buffer.from(f.content, 'utf-8').toString('base64'),
+          branch,
+        }
+
+        if (sha) payload.sha = sha
+
+        const putResp = await fetch(url, {
+          method: 'PUT',
+          headers,
+          body: JSON.stringify(payload),
+        })
+
+        if (!putResp.ok) {
+          const text = await putResp.text()
+          results.push({ path: f.path, status: 'error', detail: text })
+        } else {
+          results.push({ path: f.path, status: 'ok' })
+        }
+      } catch (err: any) {
+        results.push({ path: f.path, status: 'error', detail: String(err) })
+      }
+    }
+
+    return c.json({ success: true, results })
+  } catch (err: any) {
+    console.error('[Export:GitHub] error', err)
+    return c.json({ error: String(err) }, 500)
+  }
+})
+
 export class BotExporter {
   private data: ExportRequest;
   private isJs: boolean;
