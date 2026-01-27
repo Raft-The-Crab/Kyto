@@ -50,7 +50,7 @@ export default function SignupPage() {
                 <Terminal className="w-5 h-5" />
               </div>
               <span className="font-black text-2xl tracking-tighter text-slate-900 dark:text-white">
-                KYTO
+                Kyto
               </span>
             </Link>
             <h1 className="text-3xl font-black text-slate-900 dark:text-white mb-2 tracking-tight">
@@ -63,12 +63,13 @@ export default function SignupPage() {
 
           <form onSubmit={handleSignup} className="space-y-5">
             <div className="space-y-2 group">
-              <label className="text-xs font-bold uppercase text-slate-500 dark:text-slate-400 ml-1 tracking-wider group-focus-within:text-emerald-500 transition-colors">
+              <label htmlFor="signup-name" className="text-xs font-bold uppercase text-slate-500 dark:text-slate-400 ml-1 tracking-wider group-focus-within:text-emerald-500 transition-colors">
                 Full Name
               </label>
               <div className="relative">
                 <User className="absolute left-4 top-3.5 w-5 h-5 text-slate-400 group-focus-within:text-emerald-500 transition-colors" />
                 <input
+                  id="signup-name"
                   type="text"
                   value={formData.name}
                   onChange={e => setFormData({ ...formData, name: e.target.value })}
@@ -79,12 +80,13 @@ export default function SignupPage() {
             </div>
 
             <div className="space-y-2 group">
-              <label className="text-xs font-bold uppercase text-slate-500 dark:text-slate-400 ml-1 tracking-wider group-focus-within:text-emerald-500 transition-colors">
+              <label htmlFor="signup-email" className="text-xs font-bold uppercase text-slate-500 dark:text-slate-400 ml-1 tracking-wider group-focus-within:text-emerald-500 transition-colors">
                 Email Address
               </label>
               <div className="relative">
                 <Mail className="absolute left-4 top-3.5 w-5 h-5 text-slate-400 group-focus-within:text-emerald-500 transition-colors" />
                 <input
+                  id="signup-email"
                   type="email"
                   value={formData.email}
                   onChange={e => setFormData({ ...formData, email: e.target.value })}
@@ -95,12 +97,13 @@ export default function SignupPage() {
             </div>
 
             <div className="space-y-2 group">
-              <label className="text-xs font-bold uppercase text-slate-500 dark:text-slate-400 ml-1 tracking-wider group-focus-within:text-emerald-500 transition-colors">
+              <label htmlFor="signup-password" className="text-xs font-bold uppercase text-slate-500 dark:text-slate-400 ml-1 tracking-wider group-focus-within:text-emerald-500 transition-colors">
                 Password
               </label>
               <div className="relative">
                 <Lock className="absolute left-4 top-3.5 w-5 h-5 text-slate-400 group-focus-within:text-emerald-500 transition-colors" />
                 <input
+                  id="signup-password"
                   type="password"
                   value={formData.password}
                   onChange={e => setFormData({ ...formData, password: e.target.value })}

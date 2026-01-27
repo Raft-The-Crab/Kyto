@@ -1,4 +1,4 @@
-import React from 'react'
+import { useEffect, useState } from 'react'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/Dialog'
 import { Button } from '@/components/ui/Button'
 
@@ -9,13 +9,13 @@ interface ExportPreviewDialogProps {
 }
 
 export function ExportPreviewDialog({ open, onClose, files }: ExportPreviewDialogProps) {
-  const [active, setActive] = React.useState<string | null>(files.length > 0 ? files[0].path : null)
+  const [active, setActive] = useState<string | null>(files[0]?.path ?? null)
 
-  React.useEffect(() => {
-    if (files.length > 0) setActive(files[0].path)
+  useEffect(() => {
+    if (files.length > 0) setActive(files[0]?.path ?? null)
   }, [files])
 
-  const current = files.find((f) => f.path === active)
+  const current = files.find((f) => f.path === active) ?? null
 
   return (
     <Dialog open={open} onOpenChange={onClose}>

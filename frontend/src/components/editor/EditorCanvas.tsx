@@ -41,11 +41,14 @@ interface EditorCanvasProps {
 function EditorCanvasInner({ entityId, onBlockDragStart, draggedBlockType }: EditorCanvasProps) {
   const [nodes, setNodes, onNodesChange] = useNodesState<Node<CustomNodeData>>([])
   const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>([])
-  const { screenToFlowPosition, fitView } = useReactFlow()
+  const { screenToFlowPosition, fitView, setViewport, getViewport } = useReactFlow()
 
   // Track last known store states to avoid reactive loops
   const lastStoreBlocks = useRef<string>('')
   const lastStoreConnections = useRef<string>('')
+
+  // Local UI state
+  const [snapToGrid, setSnapToGrid] = useState<boolean>(true)
 
   const {
     blocks,
@@ -62,21 +65,28 @@ function EditorCanvasInner({ entityId, onBlockDragStart, draggedBlockType }: Edi
 
   // --- HARD RESET (On Entity Change) ---
   useEffect(() => {
-    const flowNodes: Node<CustomNodeData>[] = blocks.map(block => ({
-      id: block.id,
-      type: 'customBlock',
-      position: block.position,
-      data: {
-        type: block.type,
-        label: block.data.label,
-        properties: block.data.properties,
-        isValid: block.data.isValid,
-        errors: block.data.errors,
-      },
-      selected: block.id === selectedBlockId,
-      width: 240,
-      height: 120,
-    }))
+    const flowNodes: Node<CustomNodeData>[] = blocks.map(block => {
+      const labelLen = (block.data.label || '').length
+      const dynamicWidth = Math.min(420, Math.max(140, labelLen * 8 + 120))
+      const propsCount = Object.keys(block.data.properties || {}).length
+      const dynamicHeight = Math.min(220, Math.max(88, 80 + propsCount * 20))
+
+      return ({
+        id: block.id,
+        type: 'customBlock',
+        position: block.position,
+        data: {
+          type: block.type,
+          label: block.data.label,
+          properties: block.data.properties,
+          isValid: block.data.isValid,
+          errors: block.data.errors,
+        },
+        selected: block.id === selectedBlockId,
+        width: dynamicWidth,
+        height: dynamicHeight,
+      })
+    })
 
     const flowEdges = connections.map(conn => ({
       id: conn.id,
@@ -119,8 +129,8 @@ function EditorCanvasInner({ entityId, onBlockDragStart, draggedBlockType }: Edi
               errors: block.data.errors,
             },
             selected: block.id === selectedBlockId,
-            width: 240,
-            height: 120,
+            width: Math.min(420, Math.max(140, ((block.data.label || '').length * 8) + 120)),
+            height: Math.min(220, Math.max(88, 80 + Object.keys(block.data.properties || {}).length * 20)),
           }
         })
       })
@@ -154,7 +164,11 @@ function EditorCanvasInner({ entityId, onBlockDragStart, draggedBlockType }: Edi
 
       changes.forEach(change => {
         if (change.type === 'position' && change.position) {
-          updateBlock(change.id, { position: change.position })
+          const snap = (v: number) => Math.round(v / 8) * 8
+          const newPos = snapToGrid
+            ? { x: snap(change.position.x), y: snap(change.position.y) }
+            : change.position
+          updateBlock(change.id, { position: newPos })
         }
         if (change.type === 'select') {
           selectBlock(change.selected ? change.id : null)
@@ -249,6 +263,79 @@ function EditorCanvasInner({ entityId, onBlockDragStart, draggedBlockType }: Edi
     [menuPosition, addBlock, screenToFlowPosition]
   )
 
+  // Zoom controls
+  const zoomIn = useCallback(() => {
+    try {
+      const v = getViewport()
+      setViewport({ x: v.x, y: v.y, zoom: Math.min(4, v.zoom * 1.2) })
+    } catch (e) {
+      fitView({ padding: 0.2 })
+    }
+  }, [getViewport, setViewport, fitView])
+
+  const zoomOut = useCallback(() => {
+    try {
+      const v = getViewport()
+      setViewport({ x: v.x, y: v.y, zoom: Math.max(0.05, v.zoom * 0.8) })
+    } catch (e) {
+      fitView({ padding: 0.2 })
+    }
+  }, [getViewport, setViewport, fitView])
+
+  const resetZoom = useCallback(() => {
+    fitView({ padding: 0.2, duration: 400 })
+  }, [fitView])
+
+  // Auto-arrange: simple grid layout
+  const autoArrange = useCallback(() => {
+    const count = nodes.length
+    if (count === 0) {
+      toast.error('No blocks to arrange.')
+      return
+    }
+
+    const cols = Math.max(1, Math.floor(Math.sqrt(count)))
+    const colWidth = 260
+    const rowHeight = 180
+    const padding = 80
+
+    setNodes(prev => {
+      return prev.map((n, i) => {
+        const row = Math.floor(i / cols)
+        const col = i % cols
+        const newPos = { x: col * colWidth + padding, y: row * rowHeight + padding }
+        updateBlock(n.id, { position: newPos })
+        return { ...n, position: newPos }
+      })
+    })
+
+    // Give React Flow a small moment then fit the view
+    setTimeout(() => fitView({ padding: 0.12, duration: 400 }), 80)
+    toast.success('Blocks auto-arranged.')
+  }, [nodes.length, setNodes, updateBlock, fitView])
+
+  // Keyboard shortcuts: A = auto-arrange, +/- = zoom, Ctrl/Cmd+0 = reset/fit
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      // prevent typing in inputs from triggering actions
+      const active = document.activeElement
+      if (active && (active.tagName === 'INPUT' || active.tagName === 'TEXTAREA' || (active as HTMLElement).isContentEditable)) return
+
+      if (e.key === 'a' || e.key === 'A') {
+        autoArrange()
+      } else if (e.key === '+' || e.key === '=') {
+        zoomIn()
+      } else if (e.key === '-') {
+        zoomOut()
+      } else if ((e.ctrlKey || e.metaKey) && e.key === '0') {
+        resetZoom()
+      }
+    }
+
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [autoArrange, zoomIn, zoomOut, resetZoom])
+
   return (
     <div className="w-full h-full bg-white dark:bg-[#08080c] relative flex flex-col transition-colors duration-500 overflow-hidden isolate">
       <ReactFlow
@@ -275,14 +362,76 @@ function EditorCanvasInner({ entityId, onBlockDragStart, draggedBlockType }: Edi
         />
         <Panel position="top-right" className="m-6 pointer-events-none">
           <div className="bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border-2 border-black/10 dark:border-slate-800 rounded-2xl p-3 shadow-neo-sm flex items-center gap-4 text-[10px] font-black uppercase tracking-widest text-slate-500 pointer-events-auto transition-all">
-            <span className="flex items-center gap-2">
-              <div className="w-2 h-2 rounded-full bg-slate-400 dark:bg-slate-600 animate-pulse" />
-              Environment Ready
-            </span>
-            <div className="w-px h-3 bg-slate-200 dark:bg-slate-700" />
-            <span className="text-slate-900 dark:text-white uppercase tracking-tighter">
-              {nodes.length} Components
-            </span>
+            <div className="flex items-center gap-4">
+              <span className="flex items-center gap-2">
+                <div className="w-2 h-2 rounded-full bg-slate-400 dark:bg-slate-600 animate-pulse" />
+                Environment Ready
+              </span>
+              <div className="w-px h-3 bg-slate-200 dark:bg-slate-700" />
+              <span className="text-slate-900 dark:text-white uppercase tracking-tighter">
+                {nodes.length} Components
+              </span>
+            </div>
+
+            <div className="mt-2 text-[10px] text-slate-500 dark:text-slate-400">
+              <span className="font-mono">Shortcuts:</span> A = Auto-arrange · + / - = Zoom · Ctrl/Cmd+0 = Fit
+            </div>
+
+            <div className="w-px h-6 bg-slate-200 dark:bg-slate-700" />
+
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                aria-label="Zoom out"
+                className="px-2 py-1 rounded-md bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-xs"
+                onClick={zoomOut}
+                title="Zoom out"
+              >
+                −
+              </button>
+
+              <button
+                type="button"
+                aria-label="Reset zoom / Fit"
+                className="px-2 py-1 rounded-md bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-xs"
+                onClick={resetZoom}
+                title="Reset zoom / Fit (Ctrl/Cmd+0)"
+              >
+                Fit
+              </button>
+
+              <button
+                type="button"
+                aria-label="Zoom in"
+                className="px-2 py-1 rounded-md bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-xs"
+                onClick={zoomIn}
+                title="Zoom in"
+              >
+                +
+              </button>
+
+              <button
+                type="button"
+                aria-label="Auto arrange blocks (A)"
+                className="px-2 py-1 rounded-md bg-gradient-to-r from-indigo-500 to-violet-500 text-white text-xs hover:brightness-95"
+                onClick={autoArrange}
+                title="Auto arrange blocks"
+              >
+                Auto-arrange
+              </button>
+
+              {/* Snap-to-grid toggle */}
+              <button
+                type="button"
+                aria-pressed={snapToGrid}
+                aria-label={snapToGrid ? 'Disable snap to grid' : 'Enable snap to grid'}
+                onClick={() => setSnapToGrid(s => !s)}
+                className={"px-2 py-1 rounded-md text-xs " + (snapToGrid ? 'bg-indigo-600 text-white' : 'bg-slate-100 dark:bg-slate-800')}
+                title={snapToGrid ? 'Snap-to-grid: ON' : 'Snap-to-grid: OFF'}
+              >
+                Snap
+              </button>
+            </div>
           </div>
         </Panel>
         <Controls className="bg-white dark:bg-slate-900 border-2 border-black/10 dark:border-slate-800 shadow-neo-sm m-6! rounded-xl overflow-hidden" />

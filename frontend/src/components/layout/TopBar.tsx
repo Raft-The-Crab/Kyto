@@ -34,7 +34,7 @@ export function TopBar() {
                 <Terminal className="w-4 h-4 text-white" />
               </div>
               <span className="font-bold text-lg tracking-tight text-slate-900 dark:text-white hidden sm:block">
-                KYTO
+                Kyto
               </span>
             </Link>
 
@@ -42,7 +42,7 @@ export function TopBar() {
             {location.pathname !== '/' && (
               <div className="flex items-center gap-1">
                 <div className="h-4 w-px bg-slate-200 dark:bg-slate-800 hidden md:block mx-4" />
-                <nav className="hidden md:flex items-center gap-1">
+                <nav aria-label="Main navigation" className="hidden md:flex items-center gap-1">
                   {navItems.map(item => {
                     const active = isActive(item.path)
                     const Icon = item.icon
@@ -50,6 +50,7 @@ export function TopBar() {
                       <Link
                         key={item.path}
                         to={item.path}
+                        aria-current={active ? 'page' : undefined}
                         className={cn(
                           'px-4 py-2 rounded-xl text-xs font-bold transition-all group flex items-center gap-2',
                           active

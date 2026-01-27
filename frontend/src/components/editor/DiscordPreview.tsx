@@ -27,7 +27,7 @@ export function DiscordPreview({ content, username = 'Discord Bot', avatar }: Di
         >
           <div className="w-10 h-10 rounded-full bg-[#5865f2] shrink-0 flex items-center justify-center text-white font-black shadow-sm">
             {avatar ? (
-              <img src={avatar} alt="avatar" className="w-full h-full rounded-full" />
+              <img src={avatar} alt="User avatar" className="w-full h-full rounded-full" />
             ) : (
               <MessageSquare className="w-5 h-5 opacity-80" />
             )}

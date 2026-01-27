@@ -18,9 +18,10 @@ export default function DocsPage() {
             <span className="font-bold text-lg tracking-tight mr-auto">Documentation</span>
 
             <div className="relative hidden sm:block w-64">
-              <Search className="absolute left-3 top-2.5 w-4 h-4 text-slate-400" />
+              <Search className="absolute left-3 top-2.5 w-4 h-4 text-slate-400" aria-hidden="true" />
               <input
                 type="text"
+                aria-label="Search documentation"
                 placeholder="Search docs..."
                 className="w-full bg-slate-100 dark:bg-white/5 border-none rounded-lg pl-9 pr-4 py-2 text-sm font-medium focus:ring-2 focus:ring-indigo-500 transition-all placeholder:text-slate-500"
               />

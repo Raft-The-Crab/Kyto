@@ -49,7 +49,7 @@ export default function LoginPage() {
                 <Terminal className="w-5 h-5" />
               </div>
               <span className="font-black text-2xl tracking-tighter text-slate-900 dark:text-white">
-                KYTO
+                Kyto
               </span>
             </Link>
             <h1 className="text-3xl font-black text-slate-900 dark:text-white mb-2 tracking-tight">
@@ -62,12 +62,13 @@ export default function LoginPage() {
 
           <form onSubmit={handleLogin} className="space-y-5">
             <div className="space-y-2 group">
-              <label className="text-xs font-bold uppercase text-slate-500 dark:text-slate-400 ml-1 tracking-wider group-focus-within:text-indigo-500 transition-colors">
+              <label htmlFor="login-email" className="text-xs font-bold uppercase text-slate-500 dark:text-slate-400 ml-1 tracking-wider group-focus-within:text-indigo-500 transition-colors">
                 Email Address
               </label>
               <div className="relative">
                 <Mail className="absolute left-4 top-3.5 w-5 h-5 text-slate-400 group-focus-within:text-indigo-500 transition-colors" />
                 <input
+                  id="login-email"
                   type="email"
                   value={formData.email}
                   onChange={e => setFormData({ ...formData, email: e.target.value })}
@@ -79,7 +80,7 @@ export default function LoginPage() {
 
             <div className="space-y-2 group">
               <div className="flex justify-between items-center ml-1">
-                <label className="text-xs font-bold uppercase text-slate-500 dark:text-slate-400 tracking-wider group-focus-within:text-indigo-500 transition-colors">
+                <label htmlFor="login-password" className="text-xs font-bold uppercase text-slate-500 dark:text-slate-400 tracking-wider group-focus-within:text-indigo-500 transition-colors">
                   Password
                 </label>
                 <Link
@@ -92,6 +93,7 @@ export default function LoginPage() {
               <div className="relative">
                 <Lock className="absolute left-4 top-3.5 w-5 h-5 text-slate-400 group-focus-within:text-indigo-500 transition-colors" />
                 <input
+                  id="login-password"
                   type="password"
                   value={formData.password}
                   onChange={e => setFormData({ ...formData, password: e.target.value })}
@@ -128,10 +130,10 @@ export default function LoginPage() {
           </div>
 
           <div className="grid grid-cols-2 gap-4">
-            <button className="flex items-center justify-center gap-2 p-3 border-2 border-slate-200 dark:border-white/10 rounded-2xl hover:bg-slate-50 dark:hover:bg-white/5 hover:border-slate-300 dark:hover:border-white/20 transition-all font-bold text-sm text-slate-700 dark:text-slate-300 group">
+            <button type="button" aria-label="Continue with GitHub" className="flex items-center justify-center gap-2 p-3 border-2 border-slate-200 dark:border-white/10 rounded-2xl hover:bg-slate-50 dark:hover:bg-white/5 hover:border-slate-300 dark:hover:border-white/20 transition-all font-bold text-sm text-slate-700 dark:text-slate-300 group">
               <Github className="w-5 h-5 group-hover:scale-110 transition-transform" /> GitHub
             </button>
-            <button className="flex items-center justify-center gap-2 p-3 border-2 border-slate-200 dark:border-white/10 rounded-2xl hover:bg-slate-50 dark:hover:bg-white/5 hover:border-slate-300 dark:hover:border-white/20 transition-all font-bold text-sm text-slate-700 dark:text-slate-300 group">
+            <button type="button" aria-label="Continue with Discord" className="flex items-center justify-center gap-2 p-3 border-2 border-slate-200 dark:border-white/10 rounded-2xl hover:bg-slate-50 dark:hover:bg-white/5 hover:border-slate-300 dark:hover:border-white/20 transition-all font-bold text-sm text-slate-700 dark:text-slate-300 group">
               <svg
                 className="w-5 h-5 group-hover:scale-110 transition-transform text-[#5865F2]"
                 viewBox="0 0 24 24"

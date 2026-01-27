@@ -55,12 +55,12 @@ export function useUndoRedo<T>(initialState: T): UseUndoRedoReturn<T> {
   const undo = useCallback(() => {
     if (history.current.past.length === 0) return;
 
-    const previous = history.current.past[history.current.past.length - 1];
+    const previous = history.current.past[history.current.past.length - 1]!
     const newPast = history.current.past.slice(0, -1);
 
     history.current = {
       past: newPast,
-      present: previous,
+      present: previous as T,
       future: [history.current.present, ...history.current.future],
     };
 
@@ -70,12 +70,12 @@ export function useUndoRedo<T>(initialState: T): UseUndoRedoReturn<T> {
   const redo = useCallback(() => {
     if (history.current.future.length === 0) return;
 
-    const next = history.current.future[0];
+    const next = history.current.future[0]!
     const newFuture = history.current.future.slice(1);
 
     history.current = {
       past: [...history.current.past, history.current.present],
-      present: next,
+      present: next as T,
       future: newFuture,
     };
 

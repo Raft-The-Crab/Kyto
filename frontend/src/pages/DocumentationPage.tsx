@@ -1,6 +1,6 @@
 import { motion } from 'framer-motion'
 import { useState } from 'react'
-import { ChevronDown, ChevronRight, Code, Zap, Puzzle, MessageSquare, Shield, Database, Settings, Play } from 'lucide-react'
+import { ChevronDown, ChevronRight, Code, Puzzle, Shield, Database, Play } from 'lucide-react'
 
 interface DocSection {
   id: string
@@ -417,18 +417,22 @@ export function DocumentationPage() {
                           
                           {/* Active Step */}
                           <div className="space-y-4">
-                            <h4 className="font-bold text-lg">
-                              Step {activeStep + 1}: {tutorial.steps[activeStep].title}
-                            </h4>
-                            <p className="text-zinc-300">{tutorial.steps[activeStep].content}</p>
-                            
-                            {tutorial.steps[activeStep].code && (
-                              <pre className="bg-zinc-800 p-4 rounded-lg overflow-x-auto">
-                                <code className="text-sm text-emerald-400">
-                                  {tutorial.steps[activeStep].code}
-                                </code>
-                              </pre>
-                            )}
+                            {(() => {
+                              const step = tutorial.steps[activeStep]
+                              if (!step) return null
+                              return (
+                                <>
+                                  <h4 className="font-bold text-lg">Step {activeStep + 1}: {step.title}</h4>
+                                  <p className="text-zinc-300">{step.content}</p>
+
+                                  {step.code && (
+                                    <pre className="bg-zinc-800 p-4 rounded-lg overflow-x-auto">
+                                      <code className="text-sm text-emerald-400">{step.code}</code>
+                                    </pre>
+                                  )}
+                                </>
+                              )
+                            })()}
                             
                             {/* Navigation */}
                             <div className="flex justify-between pt-4">

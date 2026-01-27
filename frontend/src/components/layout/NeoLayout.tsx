@@ -23,10 +23,11 @@ export function NeoLayout({ children }: NeoLayoutProps) {
         }}
       />
 
+      <a href="#main" className="sr-only focus:not-sr-only absolute left-4 top-6 bg-white dark:bg-black px-3 py-2 rounded-md shadow-sm z-50">Skip to main content</a>
       <TopBar />
 
       {/* Main Content Area */}
-      <main className="relative z-10 pt-24 pb-20 px-6 max-w-[1400px] mx-auto min-h-screen animate-in fade-in duration-700">
+      <main id="main" className="relative z-10 pt-24 pb-20 px-6 max-w-[1400px] mx-auto min-h-screen animate-in fade-in duration-700">
         {children}
       </main>
     </div>

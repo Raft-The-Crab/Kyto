@@ -25,7 +25,7 @@ export default function LandingPage() {
 
           <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-indigo-500/30 bg-indigo-500/10 text-indigo-400 text-xs font-bold uppercase tracking-wider mb-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
             <span className="w-2 h-2 rounded-full bg-indigo-400 animate-pulse" />
-            v2.0 Now Available
+            v2.0.1 Released
           </div>
 
           <h1 className="text-5xl md:text-7xl font-black tracking-tighter text-slate-900 dark:text-white mb-6 max-w-4xl animate-in fade-in slide-in-from-bottom-8 duration-700 delay-100">
@@ -162,24 +162,24 @@ export default function LandingPage() {
         </section>
 
         {/* Footer */}
-        <footer className="w-full py-12 border-t border-slate-200 dark:border-white/10 flex flex-col md:flex-row justify-between items-center gap-6 text-slate-500 text-sm">
+        <footer role="contentinfo" aria-label="Site footer" className="w-full py-12 border-t border-slate-200 dark:border-white/10 flex flex-col md:flex-row justify-between items-center gap-6 text-slate-500 text-sm">
           <div className="flex items-center gap-2">
-            <div className="w-6 h-6 rounded-lg bg-indigo-500 flex items-center justify-center">
-              <span className="text-white font-bold text-xs">B</span>
+            <div className="w-6 h-6 rounded-lg bg-indigo-500 flex items-center justify-center" aria-hidden="true">
+              <span className="text-white font-bold text-xs">K</span>
             </div>
             <span className="font-bold text-slate-900 dark:text-white">Kyto</span>
           </div>
           <div className="flex gap-8">
-            <Link to="/tos" className="hover:text-indigo-500 transition-colors">
+            <Link to="/tos" className="hover:text-indigo-500 transition-colors" aria-label="Terms of Service">
               Terms
             </Link>
-            <Link to="/privacy" className="hover:text-indigo-500 transition-colors">
+            <Link to="/privacy" className="hover:text-indigo-500 transition-colors" aria-label="Privacy Policy">
               Privacy
             </Link>
-            <Link to="/docs" className="hover:text-indigo-500 transition-colors">
+            <Link to="/docs" className="hover:text-indigo-500 transition-colors" aria-label="Documentation">
               Docs
             </Link>
-            <a href="#" className="hover:text-indigo-500 transition-colors">
+            <a href="#" className="hover:text-indigo-500 transition-colors" aria-label="Join us on Discord" rel="noopener noreferrer">
               Discord
             </a>
           </div>

@@ -45,8 +45,11 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
   ({ className, variant, size, asChild = false, ...props }, ref) => {
     const Comp = asChild ? Slot : 'button'
 
+    // Ensure buttons default to type='button' to avoid accidental form submits
+    const resolvedProps = { type: (props as any).type ?? 'button', ...props }
+
     const ButtonElement = (
-      <Comp className={cn(buttonVariants({ variant, size, className }))} ref={ref} {...props} />
+      <Comp className={cn(buttonVariants({ variant, size, className }))} ref={ref} {...resolvedProps} />
     )
 
     if (asChild) return ButtonElement
