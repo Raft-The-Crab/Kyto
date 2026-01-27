@@ -1,5 +1,5 @@
 import { Link, useLocation } from 'react-router-dom'
-import { LayoutDashboard, Store, BookOpen, Layers, Terminal } from 'lucide-react'
+import { LayoutDashboard, Store, BookOpen, Layers, Terminal, Menu, X } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { UserMenu } from './UserMenu'
 import { WorkspaceSelector } from './WorkspaceSelector'
@@ -9,6 +9,7 @@ import { useState } from 'react'
 export function TopBar() {
   const location = useLocation()
   const [settingsOpen, setSettingsOpen] = useState(false)
+  const [mobileOpen, setMobileOpen] = useState(false)
 
   const isActive = (path: string) => {
     if (path === '/dashboard' && location.pathname === '/dashboard') return true
@@ -69,6 +70,15 @@ export function TopBar() {
                     )
                   })}
                 </nav>
+
+                {/* Mobile menu toggle */}
+                <button
+                  aria-label="Open menu"
+                  onClick={() => setMobileOpen(true)}
+                  className="md:hidden p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-white/5"
+                >
+                  <Menu className="w-5 h-5" />
+                </button>
               </div>
             )}
           </div>
@@ -102,6 +112,42 @@ export function TopBar() {
           </div>
         </header>
       </div>
+
+      {/* Mobile overlay menu */}
+      {mobileOpen && (
+        <div className="fixed inset-0 z-40 bg-black/40 flex items-start justify-center p-6 md:hidden">
+          <div className="w-full max-w-sm bg-white dark:bg-[#0b0b0c] rounded-2xl p-4 shadow-lg border border-white/10">
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-indigo-600 rounded text-white">
+                  <Terminal className="w-4 h-4" />
+                </div>
+                <span className="font-bold">Kyto</span>
+              </div>
+              <button aria-label="Close menu" onClick={() => setMobileOpen(false)} className="p-2 rounded hover:bg-slate-100 dark:hover:bg-white/5">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <nav className="flex flex-col gap-2">
+              {navItems.map(item => (
+                <Link key={item.path} to={item.path} onClick={() => setMobileOpen(false)} className="px-3 py-2 rounded hover:bg-slate-50 dark:hover:bg-white/5">
+                  {item.label}
+                </Link>
+              ))}
+            </nav>
+
+            <div className="mt-4 flex flex-col gap-2">
+              <Link to="/login" onClick={() => setMobileOpen(false)} className="px-3 py-2 rounded hover:bg-slate-50 dark:hover:bg-white/5">
+                Log in
+              </Link>
+              <Link to="/signup" onClick={() => setMobileOpen(false)} className="px-3 py-2 rounded bg-indigo-600 text-white text-center">
+                Sign up
+              </Link>
+            </div>
+          </div>
+        </div>
+      )}
 
       <SettingsDialog open={settingsOpen} onOpenChange={setSettingsOpen} />
     </>

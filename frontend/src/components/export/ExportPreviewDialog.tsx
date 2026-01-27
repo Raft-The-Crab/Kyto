@@ -1,11 +1,22 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
+import Editor from '@monaco-editor/react'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/Dialog'
 import { Button } from '@/components/ui/Button'
+import { Copy, Download } from 'lucide-react'
+import { toast } from 'sonner'
 
 interface ExportPreviewDialogProps {
   open: boolean
   onClose: () => void
   files: Array<{ path: string; size: number; preview: string; issues?: string[] }>
+}
+
+function getLanguageFromPath(path: string) {
+  if (path.endsWith('.ts') || path.endsWith('.tsx')) return 'typescript'
+  if (path.endsWith('.js') || path.endsWith('.mjs')) return 'javascript'
+  if (path.endsWith('.py')) return 'python'
+  if (path.endsWith('.json')) return 'json'
+  return 'plaintext'
 }
 
 export function ExportPreviewDialog({ open, onClose, files }: ExportPreviewDialogProps) {
@@ -17,12 +28,48 @@ export function ExportPreviewDialog({ open, onClose, files }: ExportPreviewDialo
 
   const current = files.find((f) => f.path === active) ?? null
 
+  const onCopy = useCallback(async () => {
+    if (!current) return
+    try {
+      await navigator.clipboard.writeText(current.preview)
+      toast.success('Copied to clipboard')
+    } catch (e) {
+      toast.error('Unable to copy')
+    }
+  }, [current])
+
+  const onDownload = useCallback(() => {
+    if (!current) return
+    const blob = new Blob([current.preview], { type: 'text/plain;charset=utf-8' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = current.path.split('/').pop() || 'file.txt'
+    document.body.appendChild(a)
+    a.click()
+    a.remove()
+    URL.revokeObjectURL(url)
+  }, [current])
+
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="max-w-3xl">
+      <DialogContent className="max-w-4xl">
         <DialogHeader>
-          <DialogTitle>Export Preview</DialogTitle>
-          <DialogDescription>Preview generated files and quick validation issues</DialogDescription>
+          <div className="flex items-start justify-between gap-4 w-full">
+            <div>
+              <DialogTitle>Export Preview</DialogTitle>
+              <DialogDescription>Preview generated files and quick validation issues</DialogDescription>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <Button type="button" onClick={onCopy} variant="outline" aria-label="Copy file to clipboard">
+                <Copy className="w-4 h-4 mr-2" /> Copy
+              </Button>
+              <Button type="button" onClick={onDownload} variant="outline" aria-label="Download file">
+                <Download className="w-4 h-4 mr-2" /> Download
+              </Button>
+            </div>
+          </div>
         </DialogHeader>
 
         <div className="flex gap-4">
@@ -39,22 +86,33 @@ export function ExportPreviewDialog({ open, onClose, files }: ExportPreviewDialo
             ))}
           </div>
 
-          <div className="flex-1 bg-muted/10 p-4 rounded-lg border-2 border-black max-h-[60vh] overflow-auto">
+          <div className="flex-1 bg-muted/10 p-4 rounded-lg border-2 border-black max-h-[60vh] overflow-hidden">
             {!current && <p className="text-sm">No file selected</p>}
             {current && (
-              <>
-                <div className="mb-3">
-                  <div className="text-xs font-bold">{current.path}</div>
-                  {current.issues && current.issues.length > 0 && (
-                    <div className="mt-2 space-y-1">
-                      {current.issues.map((i, idx) => (
-                        <div key={idx} className="text-xs text-yellow-400 font-bold">⚠ {i}</div>
-                      ))}
-                    </div>
-                  )}
+              <div className="h-[60vh] flex flex-col">
+                <div className="mb-3 flex items-center justify-between">
+                  <div>
+                    <div className="text-xs font-bold">{current.path}</div>
+                    {current.issues && current.issues.length > 0 && (
+                      <div className="mt-2 space-y-1">
+                        {current.issues.map((i, idx) => (
+                          <div key={idx} className="text-xs text-yellow-400 font-bold">⚠ {i}</div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
                 </div>
-                <pre className="text-xs whitespace-pre-wrap font-mono bg-white dark:bg-black p-3 rounded">{current.preview}</pre>
-              </>
+
+                <div className="flex-1 overflow-auto rounded">
+                  <Editor
+                    height="100%"
+                    defaultLanguage={getLanguageFromPath(current.path)}
+                    defaultValue={current.preview}
+                    options={{ readOnly: true, minimap: { enabled: false }, fontSize: 12 }}
+                    theme={document.documentElement.classList.contains('dark') ? 'vs-dark' : 'light'}
+                  />
+                </div>
+              </div>
             )}
           </div>
         </div>

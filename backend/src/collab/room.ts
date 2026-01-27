@@ -8,7 +8,7 @@ export interface CollabUser {
   name: string;
   color: string;
   cursor?: { x: number; y: number };
-  ws: WebSocket;
+  ws: any; // ws instance (socket) — typed as any for compatibility across environments
 }
 
 export interface CollabOperation {
@@ -163,7 +163,7 @@ export function cleanupRoom(projectId: string): void {
 // ==================== WEBSOCKET HANDLER ====================
 
 export function handleCollabConnection(
-  ws: WebSocket,
+  ws: any,
   req: IncomingMessage,
   projectId: string
 ): void {
@@ -210,8 +210,8 @@ export function handleCollabConnection(
 
 // ==================== EXPRESS/HONO WEBSOCKET UPGRADE ====================
 
-export function setupCollabWebSocket(server: any): WebSocketServer {
-  const wss = new WebSocketServer({ noServer: true });
+export function setupCollabWebSocket(server: any): any {
+  const wss: any = new WebSocketServer({ noServer: true });
 
   server.on('upgrade', (request: IncomingMessage, socket: any, head: Buffer) => {
     const url = new URL(request.url || '', `http://${request.headers.host}`);
