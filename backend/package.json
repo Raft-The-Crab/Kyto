@@ -1,33 +1,66 @@
 {
-  "name": "botify-backend",
-  "version": "1.0.0",
-  "description": "Cloudflare Workers backend for Botify platform",
+  "name": "kyto-backend",
+  "version": "2.0.3",
+  "description": "Kyto backend API - Cloudflare Workers + D1 + Durable Objects",
   "main": "src/index.ts",
+  "type": "module",
+  "engines": {
+    "node": ">=18.0.0"
+  },
   "scripts": {
     "dev": "wrangler dev",
+    "dev:local": "wrangler dev --local",
+    "build": "tsc && wrangler publish --dry-run",
     "deploy": "wrangler deploy",
-    "tail": "wrangler tail",
+    "deploy:staging": "wrangler deploy --env staging",
+    "deploy:prod": "wrangler deploy --env production",
+    "db:create": "wrangler d1 create kyto",
+    "db:create:staging": "wrangler d1 create kyto-staging --env staging",
+    "db:create:prod": "wrangler d1 create kyto-prod --env production",
+    "db:migrate": "wrangler d1 execute kyto --file=./src/db/d1-schema.sql",
+    "db:migrate:local": "wrangler d1 execute kyto --local --file=./src/db/d1-schema.sql",
+    "db:migrate:staging": "wrangler d1 execute kyto-staging --env staging --file=./src/db/d1-schema.sql",
+    "db:migrate:prod": "wrangler d1 execute kyto-prod --env production --file=./src/db/d1-schema.sql",
+    "db:seed": "wrangler d1 execute kyto --file=./src/db/seed.sql",
+    "db:seed:local": "wrangler d1 execute kyto --local --file=./src/db/seed.sql",
+    "db:query": "wrangler d1 execute kyto --command",
+    "db:backup": "wrangler d1 export kyto",
+    "type-check": "tsc --noEmit",
+    "lint": "eslint src/ --ext .ts",
+    "lint:fix": "eslint src/ --ext .ts --fix",
+    "format": "prettier --write 'src/**/*.ts'",
     "test": "vitest",
-    "type-check": "tsc --noEmit"
+    "test:coverage": "vitest --coverage",
+    "test:watch": "vitest --watch",
+    "clean": "rm -rf dist .wrangler",
+    "logs": "wrangler tail",
+    "logs:staging": "wrangler tail --env staging",
+    "logs:prod": "wrangler tail --env production"
   },
   "keywords": [
-    "cloudflare",
-    "workers",
     "discord",
-    "bot-builder"
+    "bot-builder",
+    "visual-editor",
+    "node-editor"
   ],
   "author": "Jacob",
   "license": "PROPRIETARY",
   "dependencies": {
-    "hono": "^4.0.0",
+    "@hono/node-server": "^1.8.0",
     "@hono/zod-validator": "^0.2.0",
+    "acorn": "^8.10.0",
+    "hono": "^4.0.0",
+    "jszip": "^3.10.1",
+    "node-fetch": "^3.3.2",
+    "pg": "^8.11.0",
+    "ws": "^8.16.0",
     "zod": "^3.22.4"
   },
   "devDependencies": {
-    "@cloudflare/workers-types": "^4.20240712.0",
     "@types/node": "^20.11.0",
+    "@types/ws": "^8.18.1",
+    "tsx": "^4.7.0",
     "typescript": "^5.3.3",
-    "vitest": "^1.2.1",
-    "wrangler": "^3.57.0"
+    "vitest": "^1.2.1"
   }
 }

@@ -17,11 +17,17 @@ export function WorkspaceSelector() {
   const activeProject = projects[activeProjectId]
 
   const handleCreateProject = () => {
-    // Basic prompt for now - could be a modal later
     const name = window.prompt('Enter bot name:')
     if (!name) return
 
-    const result = createProject(name, 'discord.js')
+    const choice = window.prompt(
+      'Choose runtime for this bot: "js" for discord.js (recommended) or "py" for discord.py',
+      'js'
+    )
+    const runtime =
+      choice && choice.toLowerCase().startsWith('p') ? ('discord.py' as const) : ('discord.js' as const)
+
+    const result = createProject(name, runtime)
     if (!result) {
       toast.error('Bot limit reached! You can only have 8 bots.')
     } else {
@@ -61,9 +67,12 @@ export function WorkspaceSelector() {
           <DropdownMenuItem
             key={project.id}
             onClick={() => switchProject(project.id)}
-            className="cursor-pointer"
+            className="cursor-pointer flex items-center gap-2"
           >
             <span className="flex-1 font-bold truncate">{project.name}</span>
+            <span className="text-[9px] uppercase tracking-widest text-slate-400">
+              {project.language === 'discord.py' ? 'PY' : 'JS'}
+            </span>
             {activeProjectId === project.id && <Check className="w-4 h-4 text-indigo-600" />}
           </DropdownMenuItem>
         ))}

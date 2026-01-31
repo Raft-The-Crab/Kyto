@@ -35,23 +35,25 @@ export function BentoGridItem({
   description,
   header,
   icon,
-  color = 'bg-slate-50',
+  color,
 }: BentoItemProps) {
   return (
     <motion.div
       whileHover={{ y: -5 }}
       transition={{ type: 'spring', stiffness: 300 }}
       className={cn(
-        'group row-span-1 rounded-3xl border-2 border-slate-900 shadow-neo hover:shadow-neo-lg transition-all p-6 flex flex-col justify-between space-y-4',
-        color,
+        'group row-span-1 rounded-3xl border border-border/50 shadow-soft hover:shadow-medium transition-all p-6 flex flex-col justify-between space-y-4',
+        color || 'bg-card/50 backdrop-blur-sm',
         className
       )}
     >
       {header}
       <div className="group-hover:translate-x-1 transition-transform duration-200">
-        <div className="mb-2">{icon}</div>
-        <div className="font-black text-slate-900 text-xl mb-2">{title}</div>
-        <div className="font-medium text-slate-500 text-sm leading-relaxed">{description}</div>
+        <div className="mb-2 text-primary">{icon}</div>
+        <div className="font-bold text-foreground text-xl mb-2">{title}</div>
+        <div className="font-medium text-muted-foreground text-sm leading-relaxed">
+          {description}
+        </div>
       </div>
     </motion.div>
   )

@@ -11,7 +11,7 @@ export class CollaborationClient {
   private projectId: string | null = null
   private userId: string
   private onUsersChange?: (users: CollabUser[]) => void
-  private onOperation?: (operation: any) => void
+  private onOperation?: (operation: unknown) => void
   private reconnectAttempts = 0
   private maxReconnectAttempts = 5
 
@@ -56,7 +56,7 @@ export class CollaborationClient {
     }
   }
 
-  sendOperation(operation: any) {
+  sendOperation(operation: unknown) {
     this.send({
       type: 'operation',
       data: operation,
@@ -74,11 +74,11 @@ export class CollaborationClient {
     this.onUsersChange = callback
   }
 
-  onOperationReceived(callback: (operation: any) => void) {
+  onOperationReceived(callback: (operation: unknown) => void) {
     this.onOperation = callback
   }
 
-  private handleMessage(message: any) {
+  private handleMessage(message: { type: string; data: any }) {
     switch (message.type) {
       case 'join':
         if (this.onUsersChange && message.data.users) {
@@ -102,7 +102,7 @@ export class CollaborationClient {
     }
   }
 
-  private send(message: any) {
+  private send(message: unknown) {
     if (this.ws && this.ws.readyState === WebSocket.OPEN) {
       this.ws.send(JSON.stringify(message))
     }

@@ -1,9 +1,11 @@
 import { useState } from 'react'
-import { Download, FileCode, Package } from 'lucide-react'
+import { Download, FileCode } from 'lucide-react'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '../ui/Dialog'
 import { Button } from '../ui/Button'
-import { Badge } from '../ui/Badge'
 import { apiClient } from '@/services/api'
+import { useProjectStore } from '@/store/projectStore'
+import { ExportPreviewDialog } from './ExportPreviewDialog'
+import { GitHubExportDialog } from './GitHubExportDialog'
 
 interface ExportDialogProps {
   open: boolean
@@ -12,10 +14,14 @@ interface ExportDialogProps {
   settings: any
 }
 
-export function ExportDialog({ open, onClose, canvas, settings }: ExportDialogProps) {
-  const [language, setLanguage] = useState<'discord.js' | 'discord.py'>('discord.js')
+export default function ExportDialog({ open, onClose, canvas, settings }: ExportDialogProps) {
+  const { language: projectLanguage } = useProjectStore()
+  const [language, setLanguage] = useState<'discord.js' | 'discord.py'>(projectLanguage)
   const [loading, setLoading] = useState(false)
   const [exportData, setExportData] = useState<any>(null)
+  const [previewOpen, setPreviewOpen] = useState(false)
+  const [previewFiles, setPreviewFiles] = useState<any[]>([])
+  const [ghOpen, setGhOpen] = useState(false)
 
   const handleExport = async () => {
     setLoading(true)
@@ -27,12 +33,39 @@ export function ExportDialog({ open, onClose, canvas, settings }: ExportDialogPr
     setLoading(false)
   }
 
+  const handlePreview = async () => {
+    setLoading(true)
+    const resp = await apiClient.exportPreview(canvas, language, settings)
+    if (resp.data && resp.data.files) {
+      setPreviewFiles(resp.data.files)
+      setPreviewOpen(true)
+    }
+    setLoading(false)
+  }
+
+  const handleDownloadZip = async () => {
+    setLoading(true)
+    const resp: any = await apiClient.exportZip(canvas, language, settings)
+    if (resp && resp.blob) {
+      const url = URL.createObjectURL(resp.blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `kyto-export.zip`
+      a.click()
+      URL.revokeObjectURL(url)
+    } else {
+      // show error
+      console.error('Zip export failed', resp.error)
+    }
+    setLoading(false)
+  }
+
   const handleDownload = () => {
     if (!exportData) return
 
     // Create a simple text file with all generated files
     let content = '='.repeat(50) + '\n'
-    content += 'BOTIFY EXPORT\n'
+    content += 'KYTO EXPORT\n'
     content += '='.repeat(50) + '\n\n'
 
     exportData.files.forEach((file: any) => {
@@ -90,10 +123,25 @@ export function ExportDialog({ open, onClose, canvas, settings }: ExportDialogPr
 
           {/* Export Button */}
           {!exportData && (
-            <Button onClick={handleExport} disabled={loading} size="lg" className="w-full">
-              <Package className="w-5 h-5 mr-2" />
-              {loading ? 'Generating...' : 'Generate Code'}
-            </Button>
+            <div className="flex gap-3">
+              <Button
+                onClick={handleExport}
+                disabled={loading}
+                className="w-full glass hover:bg-primary/20"
+              >
+                {loading ? 'Generating...' : 'Generate Code'}
+              </Button>
+              <Button
+                onClick={handlePreview}
+                disabled={loading}
+                size="lg"
+                variant="outline"
+                className="flex-1"
+              >
+                <FileCode className="w-5 h-5 mr-2" />
+                Preview
+              </Button>
+            </div>
           )}
 
           {/* Export Result */}
@@ -113,14 +161,46 @@ export function ExportDialog({ open, onClose, canvas, settings }: ExportDialogPr
                 </div>
               </div>
 
-              <Button onClick={handleDownload} size="lg" className="w-full">
-                <Download className="w-5 h-5 mr-2" />
-                Download Code
-              </Button>
+              <div className="space-y-2">
+                <Button onClick={handleDownload} size="lg" className="w-full">
+                  <Download className="w-5 h-5 mr-2" />
+                  Download Code
+                </Button>
+                <Button onClick={handleDownloadZip} size="lg" className="w-full">
+                  <Download className="w-5 h-5 mr-2" />
+                  Download ZIP
+                </Button>
+                <Button
+                  onClick={() => setGhOpen(true)}
+                  size="lg"
+                  className="w-full glass hover:bg-primary/20"
+                >
+                  <Download className="w-5 h-5 mr-2" />
+                  Export to GitHub
+                </Button>
+              </div>
             </div>
           )}
         </div>
       </DialogContent>
+
+      {/* Export preview dialog */}
+      {previewOpen && (
+        <ExportPreviewDialog
+          open={previewOpen}
+          onClose={() => setPreviewOpen(false)}
+          files={previewFiles}
+          onDownloadZip={handleDownloadZip}
+        />
+      )}
+
+      {ghOpen && (
+        <GitHubExportDialog
+          open={ghOpen}
+          onClose={() => setGhOpen(false)}
+          files={(exportData && exportData.files) || []}
+        />
+      )}
     </Dialog>
   )
 }

@@ -1,4 +1,3 @@
-import { ComponentProps } from 'react'
 import {
   Dialog,
   DialogContent,
@@ -10,9 +9,10 @@ import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 import { Label } from '@/components/ui/Label'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/Tabs'
-import { User, CreditCard, Key, Palette, Settings } from 'lucide-react'
+import { User, Key, Palette, Settings, Code2 } from 'lucide-react'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/Avatar'
 import { useTheme } from '@/components/providers/ThemeProvider'
+import { useProjectStore } from '@/store/projectStore'
 
 interface SettingsDialogProps {
   open: boolean
@@ -21,6 +21,7 @@ interface SettingsDialogProps {
 
 export function SettingsDialog({ open, onOpenChange }: SettingsDialogProps) {
   const { setTheme, theme } = useTheme()
+  const { language, updateMetadata } = useProjectStore()
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -40,7 +41,7 @@ export function SettingsDialog({ open, onOpenChange }: SettingsDialogProps) {
               </h2>
               <TabsList className="flex flex-col h-auto bg-transparent gap-1 p-0 justify-start w-full">
                 <SettingsTab value="account" icon={User} label="Account" />
-                <SettingsTab value="billing" icon={CreditCard} label="Billing" />
+                <SettingsTab value="workspace" icon={Code2} label="Workspace" />
                 <SettingsTab value="api" icon={Key} label="API Keys" />
                 <SettingsTab value="appearance" icon={Palette} label="Appearance" />
               </TabsList>
@@ -84,7 +85,7 @@ export function SettingsDialog({ open, onOpenChange }: SettingsDialogProps) {
                     </Label>
                     <Input
                       id="email"
-                      defaultValue="jacob@botify.app"
+                      defaultValue="jacob@kyto.dev"
                       className="dark:bg-slate-900 dark:border-slate-700"
                     />
                   </div>
@@ -98,7 +99,7 @@ export function SettingsDialog({ open, onOpenChange }: SettingsDialogProps) {
                 <div>
                   <h3 className="text-2xl font-bold text-slate-900 dark:text-white">Appearance</h3>
                   <p className="text-slate-500 dark:text-slate-400 font-medium">
-                    Customize how Botify looks on your device.
+                    Customize how Kyto looks on your device.
                   </p>
                 </div>
                 <div className="space-y-4">
@@ -110,26 +111,87 @@ export function SettingsDialog({ open, onOpenChange }: SettingsDialogProps) {
                     <ThemeCard mode="dark" current={theme} onClick={() => setTheme('dark')} />
                     <ThemeCard mode="system" current={theme} onClick={() => setTheme('system')} />
                   </div>
+
+                  <div className="mt-6">
+                    <h4 className="font-bold text-sm uppercase tracking-widest text-slate-400 mb-3">
+                      Editor Preferences
+                    </h4>
+
+                    <div className="flex flex-col gap-3">
+                      <label className="flex items-center justify-between gap-4 p-3 rounded-lg border border-slate-200 dark:border-slate-800">
+                        <div>
+                          <div className="font-bold">Snap to grid</div>
+                          <div className="text-xs text-slate-500">
+                            Automatically snap nodes to a grid while dragging
+                          </div>
+                        </div>
+                        <input
+                          type="checkbox"
+                          defaultChecked={localStorage.getItem('kyto_snap') !== 'false'}
+                          onChange={e => {
+                            const v = e.target.checked
+                            localStorage.setItem('kyto_snap', String(v))
+                            window.dispatchEvent(
+                              new CustomEvent('kyto:preferences', { detail: { snapToGrid: v } })
+                            )
+                          }}
+                        />
+                      </label>
+
+                      <label className="flex items-center justify-between gap-4 p-3 rounded-lg border border-slate-200 dark:border-slate-800">
+                        <div>
+                          <div className="font-bold">Show grid</div>
+                          <div className="text-xs text-slate-500">
+                            Display a background grid to help positioning
+                          </div>
+                        </div>
+                        <input
+                          type="checkbox"
+                          defaultChecked={localStorage.getItem('kyto_grid') === 'true'}
+                          onChange={e => {
+                            const v = e.target.checked
+                            localStorage.setItem('kyto_grid', String(v))
+                            window.dispatchEvent(
+                              new CustomEvent('kyto:preferences', { detail: { showGrid: v } })
+                            )
+                          }}
+                        />
+                      </label>
+                    </div>
+                  </div>
                 </div>
               </TabsContent>
 
-              <TabsContent value="billing" className="space-y-6 mt-0">
+              <TabsContent value="workspace" className="space-y-6 mt-0">
                 <div>
-                  <h3 className="text-2xl font-bold text-slate-900 dark:text-white">Billing</h3>
+                  <h3 className="text-2xl font-bold text-slate-900 dark:text-white">Workspace</h3>
                   <p className="text-slate-500 dark:text-slate-400 font-medium">
-                    Manage your subscription.
+                    Configure the active bot&apos;s runtime and behavior.
                   </p>
                 </div>
-                <div className="p-6 border-2 border-slate-900 dark:border-slate-700 rounded-2xl bg-slate-50 dark:bg-slate-900 shadow-neo-sm">
-                  <h4 className="font-bold text-lg mb-2 text-slate-900 dark:text-white">
-                    Free Plan
-                  </h4>
-                  <p className="text-slate-500 dark:text-slate-400 text-sm mb-4">
-                    You are currently on the free tier.
-                  </p>
-                  <Button className="bg-indigo-600 hover:bg-indigo-700 text-white font-black shadow-neo-sm">
-                    Upgrade to Pro
-                  </Button>
+
+                <div className="space-y-4">
+                  <div className="grid gap-2 max-w-xs">
+                    <Label className="dark:text-slate-300 text-sm font-bold uppercase tracking-widest">
+                      Runtime (recommended: discord.js)
+                    </Label>
+                    <select
+                      value={language}
+                      onChange={e =>
+                        updateMetadata({
+                          language: e.target.value === 'discord.py' ? 'discord.py' : 'discord.js',
+                        })
+                      }
+                      className="text-sm font-semibold"
+                    >
+                      <option value="discord.js">discord.js (Node.js)</option>
+                      <option value="discord.py">discord.py (Python)</option>
+                    </select>
+                    <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">
+                      You can switch at any time; code export and generation will follow this
+                      runtime.
+                    </p>
+                  </div>
                 </div>
               </TabsContent>
 
@@ -169,7 +231,15 @@ export function SettingsDialog({ open, onOpenChange }: SettingsDialogProps) {
   )
 }
 
-function SettingsTab({ value, icon: Icon, label }: { value: string; icon: any; label: string }) {
+function SettingsTab({
+  value,
+  icon: Icon,
+  label,
+}: {
+  value: string
+  icon: React.ElementType
+  label: string
+}) {
   return (
     <TabsTrigger
       value={value}
@@ -193,14 +263,14 @@ function ThemeCard({
   return (
     <button
       onClick={onClick}
-      className={`p-4 rounded-xl border-2 text-left transition-all ${
+      className={`p-4 rounded-3xl border-2 text-left transition-all ${
         current === mode
           ? 'border-indigo-600 bg-indigo-50 dark:bg-indigo-900/20 ring-2 ring-indigo-200 dark:ring-indigo-900 shadow-neo-sm'
           : 'border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700'
       }`}
     >
       <div
-        className={`w-full aspect-video rounded-lg mb-3 border border-slate-200 dark:border-slate-700 ${
+        className={`w-full aspect-video rounded-2xl mb-3 border border-slate-200 dark:border-slate-700 ${
           mode === 'dark'
             ? 'bg-slate-900'
             : mode === 'light'

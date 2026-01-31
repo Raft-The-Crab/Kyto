@@ -1,4 +1,4 @@
-const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8787'
+export const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8787'
 
 export interface ApiResponse<T> {
   data?: T
@@ -13,10 +13,10 @@ class ApiClient {
   }
 
   private getUserId(): string {
-    let userId = localStorage.getItem('botify_user_id')
+    let userId = localStorage.getItem('kyto_user_id')
     if (!userId) {
       userId = crypto.randomUUID()
-      localStorage.setItem('botify_user_id', userId)
+      localStorage.setItem('kyto_user_id', userId)
     }
     return userId
   }
@@ -47,15 +47,15 @@ class ApiClient {
 
   // Projects API
   async listProjects() {
-    return this.request<{ projects: any[] }>('/api/projects')
+    return this.request<{ projects: unknown[] }>('/api/projects')
   }
 
   async getProject(id: string) {
-    return this.request<{ project: any }>(`/api/projects/${id}`)
+    return this.request<{ project: unknown }>(`/api/projects/${id}`)
   }
 
-  async saveProject(project: any) {
-    return this.request<{ project: any }>('/api/projects', {
+  async saveProject(project: unknown) {
+    return this.request<{ project: unknown }>('/api/projects', {
       method: 'POST',
       body: JSON.stringify(project),
     })
@@ -68,19 +68,55 @@ class ApiClient {
   }
 
   // AI Assistant API
-  async getAISuggestions(canvas: any, context?: string) {
-    return this.request<{ suggestions: any[] }>('/api/ai/suggest', {
+  async getAISuggestions(canvas: unknown, context?: string) {
+    return this.request<{ suggestions: unknown[] }>('/api/ai/suggest', {
       method: 'POST',
       body: JSON.stringify({ canvas, context }),
     })
   }
 
   // Export API
-  async exportBot(canvas: any, language: 'discord.js' | 'discord.py', settings: any) {
-    return this.request<{ files: any[]; dependencies: any; instructions: string }>('/api/export', {
+  async exportBot(canvas: unknown, language: 'discord.js' | 'discord.py', settings: unknown) {
+    return this.request<{ files: unknown[]; dependencies: unknown; instructions: string }>(
+      '/api/export',
+      {
+        method: 'POST',
+        body: JSON.stringify({ canvas, language, settings }),
+      }
+    )
+  }
+
+  // Preview export (returns files with issues and preview snippets)
+  async exportPreview(canvas: unknown, language: 'discord.js' | 'discord.py', settings: unknown) {
+    return this.request<{ files: unknown[] }>(`/api/export?preview=true`, {
       method: 'POST',
       body: JSON.stringify({ canvas, language, settings }),
     })
+  }
+
+  // Request backend to generate a ZIP and return as blob
+  async exportZip(canvas: unknown, language: 'discord.js' | 'discord.py', settings: unknown) {
+    try {
+      const response = await fetch(`${API_BASE}/api/export?format=zip`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-User-ID': this.userId,
+        },
+        body: JSON.stringify({ canvas, language, settings }),
+      })
+
+      if (!response.ok) {
+        const err = await response.text()
+        return { error: err }
+      }
+
+      const blob = await response.blob()
+      return { blob }
+    } catch (error) {
+      console.error('Export zip failed:', error)
+      return { error: 'Network error' }
+    }
   }
 }
 

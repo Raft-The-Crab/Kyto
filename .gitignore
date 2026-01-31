@@ -6,7 +6,8 @@ yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
-
+.gitignore
+.backend
 # Runtime data
 pids
 *.pid
@@ -36,7 +37,6 @@ jspm_packages/
 # Optional eslint cache
 .eslintcache
 
-# Optional stylelint cache
 .stylelintcache
 
 # Microbundle cache
@@ -96,12 +96,74 @@ dist
 # FuseBox cache
 .fusebox/
 
+# Logs
+logs
+*.log
+npm-debug.log*
 # DynamoDB Local files
 .dynamodb/
 
 # TernJS port file
 .tern-port
+# Runtime data
+pids
+*.pid
+*.seed
+*.pid.lock
 
+# Coverage
+coverage/
+*.lcov
+.nyc_output
+
+# Dependency directories
+node_modules/
+jspm_packages/
+
+# TypeScript
+*.tsbuildinfo
+
+# Build outputs
+dist/
+
+.next/
+.vercel/
+out/
+frontend/dist/
+backend/dist/
+
+# Env files
+.env
+.env.*
+frontend/.env*
+backend/.env*
+
+# IDE/editor
+.vscode/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+*.DS_Store
+Thumbs.db
+
+# Misc
+.eslintcache
+.stylelintcache
+.rpt2_cache/
+.rts2_cache_cjs/
+.rts2_cache_es/
+.rts2_cache_umd/
+.node_repl_history
+*.tgz
+.yarn-integrity
+.yarn/cache
+.yarn/unplugged
+.yarn/build-state.yml
+.yarn/install-state.gz
+.pnp.*
 # Stores VSCode versions used for testing VSCode extensions
 .vscode-test
 

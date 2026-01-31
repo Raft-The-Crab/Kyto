@@ -6,7 +6,7 @@ import { cn } from '@/lib/utils'
 
 const STEPS = [
   {
-    title: 'Welcome to Botify! 👋',
+    title: 'Welcome to Kyto!',
     text: 'Building Discord bots has never been easier. Follow this 30-second tour to understand the essentials.',
     icon: Sparkles,
   },
@@ -31,7 +31,7 @@ export function OnboardingTour() {
   const [currentStep, setCurrentStep] = useState(-1)
 
   useEffect(() => {
-    const hasSeen = localStorage.getItem('botify-onboarding-done')
+    const hasSeen = localStorage.getItem('kyto-onboarding-done')
     if (!hasSeen) {
       setTimeout(() => setCurrentStep(0), 1000)
     }
@@ -45,7 +45,7 @@ export function OnboardingTour() {
   const Icon = step.icon || HelpCircle
 
   const handleFinish = () => {
-    localStorage.setItem('botify-onboarding-done', 'true')
+    localStorage.setItem('kyto-onboarding-done', 'true')
     setCurrentStep(-1)
   }
 

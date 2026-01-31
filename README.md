@@ -1,6 +1,8 @@
 # Kyto
 
-**Visual Discord Bot Builder** - Design, build, and deploy Discord bots without writing code.
+**Kyto - Visual Discord Bot Builder** - Design, build, and export Discord bots with a visual canvas, AI-assisted suggestions, and real-time collaboration.
+
+> Release: **v2.0.3** - January 31, 2026 - Branding update and improvements.
 
 [![License](https://img.shields.io/badge/license-Private-red.svg)](LICENSE)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.3-blue.svg)](https://www.typescriptlang.org/)
@@ -8,27 +10,203 @@
 
 ---
 
-## ✨ Features
+## Current Status
 
-- 🎨 **Visual Canvas** - Drag-and-drop node-based editor powered by React Flow
-- 💻 **Monaco IDE** - Professional code editing experience in your browser
-- 🔄 **Live Collaboration** - Work together with up to 2 users in real-time
-- 🤖 **AI Assistant** - Rule-based suggestions to help build your bot
-- 📦 **Multi-Language Export** - Generate production-ready Discord.js or Discord.py code
-- 🎯 **Full Discord API** - Commands, events, buttons, modals, voice, threads, and more
+- **Frontend**: Visual canvas, Monaco editor, AI assistant, collaboration client, and export functionality fully implemented
+- **Backend**: REST APIs for projects, export, and AI. WebSocket collaboration with in-memory rooms for development
+- **Builder Pages**: Command, Event, and Module builders are fully functional
+- **Pages**: Complete set of pages including Features, About, Contact, Blog, Careers, License
+- **Known Gaps**: Collaboration persistence (in-memory only), no CI/CD pipeline yet, desktop build pending
 
----
-
-## 📝 License
-
-**Private Software** - This repository and its builds are restricted to authorized users only.
-**Team**: Jacob & Dave
-Unauthorized copying, distribution, or modification is prohibited.
+> Note: The project is intended to be deployable to Cloudflare Workers and D1/Durable Objects, but the current development server runs with `Hono` + Node (using `ws` for WebSocket collaboration).
 
 ---
 
-## 🤝 Contributing
+## Features
 
-This is a private project. For access requests, please contact the team.
+- **Visual Builder** - Drag-and-drop block-based editor for bot logic
+- **Code Editor** - Professional Monaco editor with syntax highlighting
+- **Real-Time Collaboration** - Work with your team in real-time
+- **AI Assistant** - Smart suggestions and code generation
+- **Code Export** - Generate Discord.js or Discord.py projects
+- **Block Library** - 100+ pre-built blocks for common operations
+- **Analytics Dashboard** - Monitor bot performance and usage
+- **Live Preview** - Test your bot before deployment
+- **Tauri Desktop App** - Native desktop application with offline capabilities
+- **Cloudflare Integration** - Scalable backend with D1 and Durable Objects
 
 ---
+
+## Tech Stack
+
+### Frontend
+
+- React 18 + TypeScript
+- @xyflow/react for visual canvas
+- Monaco Editor for code editing
+- Tailwind CSS + Framer Motion for UI
+- Zustand for state management
+- Vite for build tooling
+
+### Backend
+
+- Hono framework for REST API
+- WebSocket server for real-time collaboration
+- Cloudflare Workers + D1 + Durable Objects
+- Tauri for native desktop applications
+- In-memory storage for development
+
+---
+
+## Getting Started
+
+### Prerequisites
+
+- Node.js 18+
+- npm or pnpm
+- Rust (for Tauri desktop app)
+
+### Frontend
+
+```bash
+cd frontend
+npm install
+npm run dev
+```
+
+Frontend runs at `http://localhost:5173`
+
+### Backend
+
+```bash
+cd backend
+npm install
+npm run dev
+```
+
+Backend runs at `http://localhost:8787`
+
+### Desktop App (Tauri)
+
+```bash
+cd src-tauri
+cargo tauri dev
+```
+
+---
+
+## Project Structure
+
+```
+kyto/
+├── frontend/           # React + TypeScript frontend
+│   ├── src/
+│   │   ├── components/ # Reusable UI components
+│   │   ├── pages/      # Page components
+│   │   ├── store/      # Zustand state management
+│   │   ├── types/      # TypeScript type definitions
+│   │   ├── engine/     # Code generation and AI
+│   │   └── lib/        # Utilities and helpers
+│   └── package.json
+├── backend/            # Node.js backend
+│   ├── src/
+│   │   ├── api/        # REST API routes
+│   │   ├── collab/     # WebSocket collaboration
+│   │   └── db/         # Database schema
+│   └── package.json
+├── src-tauri/          # Tauri desktop application
+└── docs/               # Documentation
+```
+
+---
+
+## Available Scripts
+
+### Frontend
+
+- `npm run dev` - Start development server
+- `npm run build` - Build for production
+- `npm run preview` - Preview production build
+- `npm run lint` - Run ESLint
+- `npm run type-check` - Run TypeScript type checking
+
+### Backend
+
+- `npm run dev` - Start development server
+- `npm run build` - Build TypeScript
+- `npm run deploy` - Deploy to Cloudflare Workers
+
+### Desktop App
+
+- `npm run tauri dev` - Start Tauri development
+- `npm run tauri build` - Build Tauri app
+
+---
+
+## Documentation
+
+- **Getting Started** - Visit `/docs` in the application
+- **Features** - Visit `/features` for detailed feature overview
+- **About** - Learn more at `/about`
+- **Contact** - Get support at `/contact`
+
+---
+
+## Use Cases
+
+- **Community Bots** - Moderation, welcome messages, custom commands
+- **Utility Bots** - Polls, reminders, role management
+- **Entertainment Bots** - Games, music, fun commands
+- **Integration Bots** - Connect Discord with external services
+- **Custom Solutions** - Build exactly what you need
+
+---
+
+## Known Issues
+
+- Collaboration rooms use in-memory storage (persistence pending)
+- Some features are under active development
+
+---
+
+## Roadmap
+
+- [ ] Persistent collaboration storage (Durable Objects/D1)
+- [ ] Enhanced AI capabilities
+- [ ] Mobile app support
+- [ ] Advanced analytics
+- [ ] Marketplace for bot templates
+- [ ] Custom block creation
+- [ ] Team management features
+
+---
+
+## Team
+
+**Kyto** is developed by a dedicated team committed to improving Discord bot development.
+
+- Jacob - Lead Developer
+- Dave - Backend Architect
+
+---
+
+## License
+
+Copyright 2026 Kyto Team. All rights reserved.
+
+This is proprietary software. See [LICENSE](LICENSE) for more information.
+
+Generated bot code is yours to use freely without restrictions.
+
+---
+
+## Support
+
+- **Email:** support@kyto.dev
+- **Discord:** discord.gg/kyto
+- **Documentation:** Visit `/docs` in the app
+- **Contact:** Visit `/contact` for inquiries
+
+---
+
+**Built by the Kyto Team** - v2.0.3 - January 31, 2026

@@ -1,107 +1,93 @@
-import { Download, Star, TrendingUp, Package, ChevronRight } from 'lucide-react'
+import { ProjectLayout } from '@/components/layout/ProjectLayout'
+import { motion } from 'framer-motion'
+import { TrendingUp, Package, Star, Download, ChevronRight } from 'lucide-react'
 import { TEMPLATES } from '@/lib/templates'
-import { NeoLayout } from '@/components/layout/NeoLayout'
+import { toast } from 'sonner'
+import { useNavigate } from 'react-router-dom'
+import { useProjectStore } from '@/store/projectStore'
 
-function MarketplacePage() {
+export default function MarketplacePage() {
+  const navigate = useNavigate()
+  const { createProject } = useProjectStore()
+
+  const handleUseTemplate = (template: any) => {
+    toast.success(`Starting project with template: ${template.name}`)
+    // Logic to create project from template
+    // For now just create a blank one with the name
+    createProject(`${template.name} Project`, 'discord.js')
+    navigate('/builder/commands')
+  }
+
   return (
-    <NeoLayout>
-      <div className="flex-1 animate-in fade-in duration-500">
-        <div className="flex items-center justify-between mb-8 border-b border-slate-200 dark:border-slate-800 pb-8">
-          <div>
-            <h1 className="text-4xl font-black text-slate-900 dark:text-white tracking-tight mb-2">
-              Marketplace
-            </h1>
-            <p className="text-slate-500 font-medium text-lg">
-              Browse community templates and modules
-            </p>
-          </div>
-          <div className="flex items-center gap-4">
-            <div className="relative group w-96 hidden md:block">
-              <input
-                type="text"
-                placeholder="Search templates..."
-                className="w-full px-4 py-2.5 bg-white dark:bg-slate-900 border-2 border-slate-900 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:border-indigo-600 transition-all font-bold shadow-neo-sm"
-              />
-            </div>
-            <button className="px-6 py-2.5 bg-white dark:bg-slate-900 border-2 border-slate-900 dark:border-slate-700 text-slate-900 dark:text-white font-black rounded-xl transition-all shadow-neo-sm hover:shadow-neo hover:-translate-y-1">
-              Share Flow
-            </button>
-          </div>
-        </div>
-
-        {/* Categories */}
-        <div className="flex gap-4 mb-10 overflow-x-auto pb-4 no-scrollbar">
-          <button className="px-6 py-2.5 bg-indigo-600 text-white rounded-xl font-bold whitespace-nowrap shadow-neo-sm border-2 border-slate-900 hover:-translate-y-1 transition-transform">
-            All Items
-          </button>
-          {['Templates', 'Modules', 'Triggers', 'Scripts'].map(cat => (
-            <button
-              key={cat}
-              className="px-6 py-2.5 bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-500 hover:text-indigo-600 border-2 border-slate-900 dark:border-slate-700 rounded-xl font-bold whitespace-nowrap transition-all shadow-neo-sm hover:-translate-y-1"
-            >
-              {cat}
-            </button>
-          ))}
+    <ProjectLayout>
+      <div className="max-w-7xl mx-auto py-12 px-6 space-y-16 animate-in fade-in duration-1000">
+        {/* Header Section */}
+        <div className="text-center space-y-4">
+          <h1 className="text-5xl font-black text-foreground">Marketplace</h1>
+          <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
+            Discover community-made templates and architectures to jumpstart your bot.
+          </p>
         </div>
 
         {/* Featured Section */}
-        <section className="mb-12">
-          <div className="flex items-center justify-between mb-8">
+        <section className="space-y-10">
+          <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <TrendingUp className="w-6 h-6 text-amber-500" />
-              <h2 className="text-2xl font-black text-slate-900 dark:text-white tracking-tight">
-                Trending Now
-              </h2>
+              <div className="p-2.5 bg-yellow-500/10 rounded-xl border border-yellow-500/20">
+                <TrendingUp className="w-5 h-5 text-yellow-500" />
+              </div>
+              <h2 className="heading-secondary text-2xl text-foreground">Trending Architectures</h2>
             </div>
-            <button className="text-indigo-500 font-bold hover:text-indigo-600 transition-colors flex items-center gap-1 group">
-              View all{' '}
-              <ChevronRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-            </button>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {TEMPLATES.map(tpl => (
-              <div
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10">
+            {TEMPLATES.map((tpl, idx) => (
+              <motion.div
                 key={tpl.id}
-                className="group bg-white dark:bg-slate-900 border-2 border-slate-900 dark:border-slate-700 rounded-2xl p-6 hover:border-indigo-600 dark:hover:border-indigo-500 transition-all cursor-default relative overflow-hidden shadow-neo-sm hover:shadow-neo hover:-translate-y-1"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: idx * 0.1 }}
+                onClick={() => handleUseTemplate(tpl)}
+                className="group cursor-pointer glass p-8 rounded-2xl border border-border/50 hover:border-primary/50 transition-all shadow-sm hover:shadow-md relative overflow-hidden"
               >
-                {/* Background Decoration */}
-                <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-50 dark:bg-indigo-900/10 blur-3xl -mr-16 -mt-16 group-hover:bg-indigo-100 dark:group-hover:bg-indigo-900/20 transition-colors" />
+                <div className="absolute top-0 right-0 w-40 h-40 bg-primary/5 blur-[80px] -mr-20 -mt-20 group-hover:bg-primary/10 transition-all duration-700" />
 
-                <div className="flex items-start justify-between mb-6 relative z-10">
-                  <div className="w-14 h-14 bg-indigo-50 dark:bg-indigo-900/20 rounded-2xl flex items-center justify-center border-2 border-slate-900 dark:border-indigo-500/20 shadow-sm">
-                    <Package className="w-7 h-7 text-indigo-600 dark:text-indigo-400" />
+                <div className="flex items-start justify-between mb-8 relative z-10">
+                  <div className="w-14 h-14 bg-primary/10 rounded-2xl flex items-center justify-center border-2 border-primary/20 group-hover:scale-110 group-hover:border-primary group-hover:shadow-lg group-hover:shadow-primary/30 transition-all duration-500">
+                    <Package className="w-7 h-7 text-primary" />
                   </div>
-                  <div className="flex items-center gap-1.5 px-3 py-1 bg-amber-50 dark:bg-amber-900/10 text-amber-600 dark:text-amber-500 border border-amber-100 dark:border-amber-500/20 rounded-lg">
+                  <div className="flex items-center gap-1.5 px-3 py-1 bg-yellow-500/10 text-yellow-500 border border-yellow-500/20 rounded-xl label-text text-sm font-bold">
                     <Star className="w-3.5 h-3.5 fill-current" />
-                    <span className="text-xs font-black">{tpl.rating}</span>
+                    <span>{tpl.rating || '4.9'}</span>
                   </div>
                 </div>
 
-                <h3 className="text-xl font-black text-slate-900 dark:text-white mb-2 group-hover:text-indigo-600 transition-colors">
-                  {tpl.name}
-                </h3>
-                <p className="text-slate-500 text-sm font-medium mb-6 min-h-[40px] leading-relaxed line-clamp-2">
-                  {tpl.description}
-                </p>
+                <div className="space-y-3 mb-8 relative z-10">
+                  <h3 className="heading-tertiary text-xl font-bold group-hover:text-primary transition-colors">
+                    {tpl.name}
+                  </h3>
+                  <p className="body-text text-sm leading-relaxed line-clamp-2 text-muted-foreground">
+                    {tpl.description}
+                  </p>
+                </div>
 
-                <div className="flex items-center justify-between pt-6 border-t border-slate-100 dark:border-slate-800 relative z-10">
-                  <div className="flex items-center gap-2 text-slate-400 text-xs font-bold uppercase tracking-wider">
-                    <Download className="w-4 h-4" />
-                    <span>{tpl.downloads}</span>
+                <div className="flex items-center justify-between pt-6 border-t border-border/50 relative z-10">
+                  <div className="flex items-center gap-4 text-muted-foreground label-text">
+                    <div className="flex items-center gap-1.5 text-xs font-bold">
+                      <Download className="w-3.5 h-3.5" />
+                      {tpl.downloads || '1.2k'}
+                    </div>
                   </div>
 
-                  <button className="px-5 py-2.5 bg-slate-900 dark:bg-white group-hover:bg-indigo-600 dark:group-hover:bg-indigo-600 text-white dark:text-slate-900 group-hover:text-white text-sm font-black rounded-xl transition-all shadow-neo-sm hover:shadow-neo">
-                    Use Now
+                  <button className="flex items-center gap-2 text-primary font-bold text-[13px] group-hover:gap-3 transition-all">
+                    Import Module <ChevronRight className="w-4 h-4" />
                   </button>
                 </div>
-              </div>
+              </motion.div>
             ))}
           </div>
         </section>
       </div>
-    </NeoLayout>
+    </ProjectLayout>
   )
 }
-
-export default MarketplacePage

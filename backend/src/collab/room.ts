@@ -1,134 +1,232 @@
-import type { CollabMessage, CollabOperation, User } from "../types";
+import { WebSocket, WebSocketServer } from 'ws';
+import type { IncomingMessage } from 'http';
+
+// ==================== TYPES ====================
+
+export interface CollabUser {
+  id: string;
+  name: string;
+  color: string;
+  cursor?: { x: number; y: number };
+  ws: WebSocket;
+}
+
+export interface CollabOperation {
+  type: 'add_block' | 'remove_block' | 'move_block' | 'update_block' | 'add_connection' | 'remove_connection';
+  data: any;
+  userId: string;
+  timestamp: number;
+}
+
+export interface CollabMessage {
+  type: 'join' | 'leave' | 'cursor' | 'operation' | 'sync' | 'users';
+  data: any;
+  userId?: string;
+}
+
+// ==================== COLLABORATION ROOM ====================
 
 export class CollaborationRoom {
-  state: DurableObjectState;
-  sessions: Map<WebSocket, User>;
+  private users: Map<string, CollabUser> = new Map();
+  private operations: CollabOperation[] = [];
+  private projectId: string;
 
-  constructor(state: DurableObjectState) {
-    this.state = state;
-    this.sessions = new Map();
+  constructor(projectId: string) {
+    this.projectId = projectId;
   }
 
-  async fetch(request: Request): Promise<Response> {
-    const upgradeHeader = request.headers.get("Upgrade");
-    if (upgradeHeader !== "websocket") {
-      return new Response("Expected WebSocket", { status: 400 });
-    }
-
-    // Check user limit (max 2 users per project)
-    if (this.sessions.size >= 2) {
-      return new Response("Room is full (max 2 users)", { status: 403 });
-    }
-
-    const pair = new WebSocketPair();
-    const [client, server] = Object.values(pair);
-
-    await this.handleSession(server, request);
-
-    return new Response(null, {
-      status: 101,
-      webSocket: client,
-    });
-  }
-
-  async handleSession(websocket: WebSocket, request: Request) {
-    websocket.accept();
-
-    const userId =
-      new URL(request.url).searchParams.get("userId") || crypto.randomUUID();
-    const user: User = {
+  join(userId: string, userName: string, ws: WebSocket): CollabUser {
+    const colors = ['#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4', '#FFEAA7', '#DDA0DD', '#98D8C8'];
+    const user: CollabUser = {
       id: userId,
-      name: `User ${userId.slice(0, 4)}`,
+      name: userName || `User ${this.users.size + 1}`,
+      color: colors[this.users.size % colors.length],
+      ws,
     };
-
-    this.sessions.set(websocket, user);
-
-    // Send current users to new user
-    this.send(websocket, {
-      type: "join",
-      userId: user.id,
+    
+    this.users.set(userId, user);
+    
+    // Notify all users of the new join
+    this.broadcast({
+      type: 'join',
       data: {
-        users: Array.from(this.sessions.values()),
+        user: { id: user.id, name: user.name, color: user.color },
+        users: this.getUserList(),
       },
-    });
+    }, userId);
 
-    // Broadcast new user to others
-    this.broadcast(
-      {
-        type: "join",
-        userId: user.id,
-        data: { user },
+    // Send current state to the new user
+    ws.send(JSON.stringify({
+      type: 'sync',
+      data: {
+        users: this.getUserList(),
+        operations: this.operations.slice(-100), // Last 100 operations
       },
-      websocket,
-    );
+    }));
 
-    websocket.addEventListener("message", (event) => {
-      try {
-        const message: CollabMessage = JSON.parse(event.data as string);
-        this.handleMessage(websocket, message);
-      } catch (error) {
-        console.error("Failed to parse message:", error);
-      }
-    });
+    return user;
+  }
 
-    websocket.addEventListener("close", () => {
-      this.sessions.delete(websocket);
+  leave(userId: string): void {
+    const user = this.users.get(userId);
+    if (user) {
+      this.users.delete(userId);
       this.broadcast({
-        type: "leave",
-        userId: user.id,
+        type: 'leave',
+        data: {
+          userId,
+          users: this.getUserList(),
+        },
       });
+    }
+  }
+
+  updateCursor(userId: string, position: { x: number; y: number }): void {
+    const user = this.users.get(userId);
+    if (user) {
+      user.cursor = position;
+      this.broadcast({
+        type: 'cursor',
+        data: {
+          userId,
+          position,
+          color: user.color,
+          name: user.name,
+        },
+      }, userId);
+    }
+  }
+
+  applyOperation(userId: string, operation: Omit<CollabOperation, 'userId' | 'timestamp'>): void {
+    const fullOperation: CollabOperation = {
+      ...operation,
+      userId,
+      timestamp: Date.now(),
+    };
+    
+    this.operations.push(fullOperation);
+    
+    // Keep only last 1000 operations
+    if (this.operations.length > 1000) {
+      this.operations = this.operations.slice(-1000);
+    }
+
+    this.broadcast({
+      type: 'operation',
+      data: fullOperation,
+    }, userId);
+  }
+
+  private getUserList(): Array<{ id: string; name: string; color: string; cursor?: { x: number; y: number } }> {
+    return Array.from(this.users.values()).map(u => ({
+      id: u.id,
+      name: u.name,
+      color: u.color,
+      cursor: u.cursor,
+    }));
+  }
+
+  private broadcast(message: CollabMessage, excludeUserId?: string): void {
+    const data = JSON.stringify(message);
+    this.users.forEach((user, id) => {
+      if (id !== excludeUserId && user.ws.readyState === WebSocket.OPEN) {
+        user.ws.send(data);
+      }
     });
   }
 
-  handleMessage(websocket: WebSocket, message: CollabMessage) {
-    const user = this.sessions.get(websocket);
-    if (!user) return;
-
-    switch (message.type) {
-      case "operation":
-        // Broadcast operation to all other users
-        this.broadcast(
-          {
-            ...message,
-            userId: user.id,
-          },
-          websocket,
-        );
-        break;
-
-      case "cursor":
-        // Update user cursor and broadcast
-        user.cursor = message.data;
-        this.broadcast(
-          {
-            type: "cursor",
-            userId: user.id,
-            data: message.data,
-          },
-          websocket,
-        );
-        break;
-
-      case "sync":
-        // Sync full canvas state
-        this.broadcast(message, websocket);
-        break;
-    }
+  get isEmpty(): boolean {
+    return this.users.size === 0;
   }
+}
 
-  broadcast(message: CollabMessage, exclude?: WebSocket) {
-    for (const [ws, user] of this.sessions) {
-      if (ws !== exclude) {
-        this.send(ws, message);
-      }
-    }
+// ==================== ROOM MANAGER ====================
+
+const rooms: Map<string, CollaborationRoom> = new Map();
+
+export function getOrCreateRoom(projectId: string): CollaborationRoom {
+  let room = rooms.get(projectId);
+  if (!room) {
+    room = new CollaborationRoom(projectId);
+    rooms.set(projectId, room);
   }
+  return room;
+}
 
-  send(websocket: WebSocket, message: CollabMessage) {
+export function cleanupRoom(projectId: string): void {
+  const room = rooms.get(projectId);
+  if (room?.isEmpty) {
+    rooms.delete(projectId);
+  }
+}
+
+// ==================== WEBSOCKET HANDLER ====================
+
+export function handleCollabConnection(
+  ws: WebSocket,
+  req: IncomingMessage,
+  projectId: string
+): void {
+  const url = new URL(req.url || '', `http://${req.headers.host}`);
+  const userId = url.searchParams.get('userId') || crypto.randomUUID();
+  const userName = url.searchParams.get('userName') || '';
+  
+  const room = getOrCreateRoom(projectId);
+  const user = room.join(userId, userName, ws);
+  
+  console.log(`[Collab] User ${user.name} joined room ${projectId}`);
+
+  ws.on('message', (data: Buffer | string) => {
     try {
-      websocket.send(JSON.stringify(message));
+      const message: CollabMessage = JSON.parse(data.toString());
+      
+      switch (message.type) {
+        case 'cursor':
+          room.updateCursor(userId, message.data);
+          break;
+          
+        case 'operation':
+          room.applyOperation(userId, message.data);
+          break;
+          
+        default:
+          console.warn(`[Collab] Unknown message type: ${message.type}`);
+      }
     } catch (error) {
-      console.error("Failed to send message:", error);
+      console.error('[Collab] Failed to parse message:', error);
     }
-  }
+  });
+
+  ws.on('close', () => {
+    console.log(`[Collab] User ${user.name} left room ${projectId}`);
+    room.leave(userId);
+    cleanupRoom(projectId);
+  });
+
+  ws.on('error', (error: Error) => {
+    console.error(`[Collab] WebSocket error for user ${userId}:`, error);
+  });
+}
+
+// ==================== EXPRESS/HONO WEBSOCKET UPGRADE ====================
+
+export function setupCollabWebSocket(server: any): WebSocketServer {
+  const wss: WebSocketServer = new WebSocketServer({ noServer: true });
+
+  server.on('upgrade', (request: IncomingMessage, socket: any, head: Buffer) => {
+    const url = new URL(request.url || '', `http://${request.headers.host}`);
+    const match = url.pathname.match(/^\/collab\/([a-zA-Z0-9-]+)$/);
+    
+    if (match) {
+      const projectId = match[1];
+      wss.handleUpgrade(request, socket, head, (ws: WebSocket) => {
+        handleCollabConnection(ws, request, projectId);
+      });
+    } else {
+      socket.destroy();
+    }
+  });
+
+  console.log('[Collab] WebSocket server ready for collaboration');
+  return wss;
 }

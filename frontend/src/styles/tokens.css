@@ -1,0 +1,89 @@
+@layer base {
+  :root {
+    /* Brand Colors - Violet & Emerald */
+    --primary: 255 60% 65%; /* #8B5CF6 */
+    --primary-foreground: 210 40% 98%;
+
+    --secondary: 150 60% 45%; /* #10B981 */
+    --secondary-foreground: 210 40% 98%;
+
+    --accent: 330 80% 60%; /* #EC4899 */
+    --accent-foreground: 210 40% 98%;
+
+    /* Neutral / Surface Colors */
+    --background: 225 25% 5%; /* #0B0E14 - Deep Blue/Black */
+    --foreground: 210 40% 98%; /* #F8FAFC */
+
+    --card: 225 25% 7%; /* #0F1219 */
+    --card-foreground: 210 40% 98%;
+
+    --popover: 225 25% 7%;
+    --popover-foreground: 210 40% 98%;
+
+    --muted: 217 33% 17%;
+    --muted-foreground: 215 20% 65%;
+
+    --border: 217 33% 15%;
+    --input: 217 33% 15%;
+
+    /* Semantic Colors */
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 210 40% 98%;
+
+    --success: 142 76% 36%;
+    --success-foreground: 210 40% 98%;
+
+    --warning: 45 93% 47%;
+    --warning-foreground: 210 40% 98%;
+
+    /* Radius - Organic/Deep Rounded */
+    --radius-sm: 0.5rem; /* 8px */
+    --radius-md: 1rem; /* 16px */
+    --radius-lg: 1.5rem; /* 24px */
+    --radius-xl: 2rem; /* 32px */
+    --radius-full: 9999px;
+
+    /* Shadows - Subtle & Functional */
+    --shadow-soft: 0 4px 20px -2px rgba(0, 0, 0, 0.2);
+    --shadow-medium: 0 8px 30px -4px rgba(0, 0, 0, 0.3);
+    --shadow-glow: 0 0 25px rgba(139, 92, 246, 0.1);
+  }
+}
+
+@layer utilities {
+  /* Renamed/Refined for "Floating" Solid look, kept class name for compat */
+  .glass {
+    @apply bg-card/95 backdrop-blur-sm border border-white/5;
+  }
+
+  .glass-premium {
+    @apply bg-card/90 backdrop-blur-xl border border-white/10 shadow-medium;
+  }
+
+  .glass-hover {
+    @apply hover:bg-card/80 transition-colors duration-200;
+  }
+
+  .text-glow {
+    text-shadow: 0 0 20px rgba(139, 92, 246, 0.3);
+  }
+
+  .scrollbar-thin {
+    scrollbar-width: thin;
+    scrollbar-color: hsl(var(--muted)) transparent;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar-thumb {
+    background-color: hsl(var(--muted));
+    border-radius: 9999px;
+  }
+}
