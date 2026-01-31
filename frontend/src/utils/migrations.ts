@@ -1,19 +1,25 @@
-// Safe migration utilities for Kyto v2.0.1
+// Safe migration utilities for Kyto v2.0.3
 // Purpose: copy old 'botify_*' localStorage keys to 'kyto_*' equivalents
 
 export function runMigrations() {
   try {
-    const migratedFlag = 'kyto_migration_v2_0_1_done'
+    const migratedFlag = 'kyto_migration_v2_0_3_done'
     if (localStorage.getItem(migratedFlag)) return
 
     const mappings: Array<[string, string]> = [
       ['botify_user_id', 'kyto_user_id'],
+      ['Botify_user_id', 'kyto_user_id'],
       ['botify_tutorial_completed', 'kyto_tutorial_completed'],
+      ['Botify_tutorial_completed', 'kyto_tutorial_completed'],
       ['botify-onboarding-done', 'kyto-onboarding-done'],
-      ['botify_ui_theme', 'kyto_ui_theme'],
+      ['Botify-onboarding-done', 'kyto-onboarding-done'],
+      ['botify_ui_theme', 'kyto-theme'],
+      ['Botify_ui_theme', 'kyto-theme'],
       ['botify-theme', 'kyto-theme'],
-      ['botify_ui_theme', 'kyto-ui-theme'],
-      ['botify-onboarding-done', 'kyto-onboarding-done'],
+      ['Botify-theme', 'kyto-theme'],
+      ['Botify_snap', 'kyto_snap'],
+      ['Botify_grid', 'kyto_grid'],
+      ['Botify_monaco_theme', 'kyto_monaco_theme'],
     ]
 
     let migrated = false
@@ -29,29 +35,21 @@ export function runMigrations() {
       }
     })
 
-    // Also copy theme storage if present (ThemeProvider keys may vary)
-    const themeKeys = ['botify-ui-theme', 'botify-theme']
-    for (const k of themeKeys) {
-      const v = localStorage.getItem(k)
-      if (v && !localStorage.getItem('kyto-ui-theme')) {
-        localStorage.setItem('kyto-ui-theme', v)
-        migrated = true
-        console.log(`[MIGRATION] Copied ${k} -> kyto-ui-theme`)
-      }
-      if (v && !localStorage.getItem('kyto-theme')) {
-        localStorage.setItem('kyto-theme', v)
-        migrated = true
-        console.log(`[MIGRATION] Copied ${k} -> kyto-theme`)
-      }
+    // Migrate workspace storage
+    const oldStorage = localStorage.getItem('Botify-workspace-storage-v1')
+    const newStorage = localStorage.getItem('kyto-workspace-storage-v2')
+    if (oldStorage && !newStorage) {
+      localStorage.setItem('kyto-workspace-storage-v2', oldStorage)
+      migrated = true
+      console.log('[MIGRATION] Copied workspace storage to kyto-workspace-storage-v2')
     }
 
     if (migrated) {
       localStorage.setItem(migratedFlag, '1')
-      console.log('[MIGRATION] Kyto v2.0.1 migration completed')
+      console.log('[MIGRATION] Kyto v2.0.3 migration completed')
     } else {
-      // Still set flag so we don't repeatedly scan
       localStorage.setItem(migratedFlag, '1')
-      console.log('[MIGRATION] Kyto v2.0.1 migration: nothing to migrate')
+      console.log('[MIGRATION] Kyto v2.0.3 migration: nothing to migrate')
     }
   } catch (err) {
     console.error('[MIGRATION] Failed to run migrations', err)

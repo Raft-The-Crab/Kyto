@@ -35,7 +35,7 @@ export interface Rule {
   trigger: {
     type: RuleTrigger;
     value: string;
-    options?: Record<string, any>;
+    options?: Record<string, unknown>;
   };
   conditions?: {
     type: 'permission' | 'role' | 'channel' | 'user';
@@ -43,7 +43,7 @@ export interface Rule {
   }[];
   actions: {
     type: RuleAction;
-    properties: Record<string, any>;
+    properties: Record<string, unknown>;
   }[];
   enabled: boolean;
 }
@@ -91,7 +91,7 @@ export class RuleEngine {
   private static evaluateTrigger(
     trigger: Rule['trigger'],
     input: string,
-    _context?: any
+    _context?: Record<string, unknown>
   ): boolean {
     const msg = input.toLowerCase();
 

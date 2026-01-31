@@ -45,7 +45,7 @@ export function UserMenu({ onOpenSettings }: UserMenuProps) {
         <DropdownMenuLabel className="font-normal">
           <div className="flex flex-col space-y-1">
             <p className="text-sm font-medium leading-none">Jacob B.</p>
-            <p className="text-xs leading-none text-muted-foreground">jacob@kyto.app</p>
+            <p className="text-xs leading-none text-muted-foreground">jacob@kyto.dev</p>
           </div>
         </DropdownMenuLabel>
         <DropdownMenuSeparator />

@@ -1,8 +1,9 @@
 import { useState } from 'react'
-import { Download, FileCode, Package } from 'lucide-react'
+import { Download, FileCode } from 'lucide-react'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '../ui/Dialog'
 import { Button } from '../ui/Button'
 import { apiClient } from '@/services/api'
+import { useProjectStore } from '@/store/projectStore'
 import { ExportPreviewDialog } from './ExportPreviewDialog'
 import { GitHubExportDialog } from './GitHubExportDialog'
 
@@ -13,8 +14,9 @@ interface ExportDialogProps {
   settings: any
 }
 
-export function ExportDialog({ open, onClose, canvas, settings }: ExportDialogProps) {
-  const [language, setLanguage] = useState<'discord.js' | 'discord.py'>('discord.js')
+export default function ExportDialog({ open, onClose, canvas, settings }: ExportDialogProps) {
+  const { language: projectLanguage } = useProjectStore()
+  const [language, setLanguage] = useState<'discord.js' | 'discord.py'>(projectLanguage)
   const [loading, setLoading] = useState(false)
   const [exportData, setExportData] = useState<any>(null)
   const [previewOpen, setPreviewOpen] = useState(false)
@@ -122,11 +124,20 @@ export function ExportDialog({ open, onClose, canvas, settings }: ExportDialogPr
           {/* Export Button */}
           {!exportData && (
             <div className="flex gap-3">
-              <Button onClick={handleExport} disabled={loading} size="lg" className="flex-1">
-                <Package className="w-5 h-5 mr-2" />
+              <Button
+                onClick={handleExport}
+                disabled={loading}
+                className="w-full glass hover:bg-primary/20"
+              >
                 {loading ? 'Generating...' : 'Generate Code'}
               </Button>
-              <Button onClick={handlePreview} disabled={loading} size="lg" variant="outline" className="flex-1">
+              <Button
+                onClick={handlePreview}
+                disabled={loading}
+                size="lg"
+                variant="outline"
+                className="flex-1"
+              >
                 <FileCode className="w-5 h-5 mr-2" />
                 Preview
               </Button>
@@ -155,11 +166,15 @@ export function ExportDialog({ open, onClose, canvas, settings }: ExportDialogPr
                   <Download className="w-5 h-5 mr-2" />
                   Download Code
                 </Button>
-                <Button onClick={handleDownloadZip} size="lg" variant="neo" className="w-full">
+                <Button onClick={handleDownloadZip} size="lg" className="w-full">
                   <Download className="w-5 h-5 mr-2" />
                   Download ZIP
                 </Button>
-                <Button onClick={() => setGhOpen(true)} size="lg" variant="outline" className="w-full">
+                <Button
+                  onClick={() => setGhOpen(true)}
+                  size="lg"
+                  className="w-full glass hover:bg-primary/20"
+                >
                   <Download className="w-5 h-5 mr-2" />
                   Export to GitHub
                 </Button>
@@ -171,11 +186,20 @@ export function ExportDialog({ open, onClose, canvas, settings }: ExportDialogPr
 
       {/* Export preview dialog */}
       {previewOpen && (
-        <ExportPreviewDialog open={previewOpen} onClose={() => setPreviewOpen(false)} files={previewFiles} onDownloadZip={handleDownloadZip} />
+        <ExportPreviewDialog
+          open={previewOpen}
+          onClose={() => setPreviewOpen(false)}
+          files={previewFiles}
+          onDownloadZip={handleDownloadZip}
+        />
       )}
 
       {ghOpen && (
-        <GitHubExportDialog open={ghOpen} onClose={() => setGhOpen(false)} files={(exportData && exportData.files) || []} />
+        <GitHubExportDialog
+          open={ghOpen}
+          onClose={() => setGhOpen(false)}
+          files={(exportData && exportData.files) || []}
+        />
       )}
     </Dialog>
   )

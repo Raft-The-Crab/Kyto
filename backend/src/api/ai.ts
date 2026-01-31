@@ -9,7 +9,11 @@ const OLLAMA_BASE = process.env.OLLAMA_HOST || "http://localhost:11434";
 const MODEL_NAME = process.env.OLLAMA_MODEL || "phi3:3.8b";
 
 // Helper: fetch with timeout
-async function fetchWithTimeout(url: string, options: any = {}, timeoutMs = 8000) {
+async function fetchWithTimeout(
+  url: string,
+  options: any = {},
+  timeoutMs = 8000
+) {
   const controller = new AbortController();
   const id = setTimeout(() => controller.abort(), timeoutMs);
   try {
@@ -108,7 +112,7 @@ aiRoutes.post(
           connections: z.array(z.any()),
         })
         .optional(),
-    }),
+    })
   ),
   async (c) => {
     try {
@@ -167,7 +171,7 @@ aiRoutes.post(
     } catch (error) {
       return c.json({ error: "Chat failed" }, 500);
     }
-  },
+  }
 );
 
 /**
@@ -177,7 +181,7 @@ async function handleConversation(
   userMessage: string,
   userId: string,
   conversationId: string,
-  canvas?: any,
+  canvas?: any
 ) {
   // Get or create conversation state
   let conversation = conversations.get(conversationId);
@@ -202,17 +206,28 @@ async function handleConversation(
   });
 
   // Analyze intent
-  const { intent, confidence } = analyzeIntentConfidence(userMessage, conversation);
+  const { intent, confidence } = analyzeIntentConfidence(
+    userMessage,
+    conversation
+  );
   conversation.context.intent = intent;
 
   // Generate response based on intent
-  const response = await generateResponse(userMessage, intent, conversation, canvas);
+  const response = await generateResponse(
+    userMessage,
+    intent,
+    conversation,
+    canvas
+  );
 
   // Post-process suggestion confidences using intent confidence
   if (response.suggestions && response.suggestions.length > 0) {
     response.suggestions = response.suggestions.map((s) => {
       if (typeof (s as any).confidence === "number") return s;
-      return { ...(s as any), confidence: Math.min(1, confidence * 0.85) } as AISuggestion;
+      return {
+        ...(s as any),
+        confidence: Math.min(1, confidence * 0.85),
+      } as AISuggestion;
     });
   }
 
@@ -234,7 +249,7 @@ async function handleConversation(
  */
 function detectIntent(
   message: string,
-  conversation: ConversationState,
+  conversation: ConversationState
 ): string {
   const msg = message.toLowerCase();
 
@@ -266,19 +281,29 @@ function detectIntent(
  * Analyze intent with a confidence score (0-1).
  * Returns higher confidence for strong keyword matches.
  */
-function analyzeIntentConfidence(message: string, conversation: ConversationState) {
+function analyzeIntentConfidence(
+  message: string,
+  conversation: ConversationState
+) {
   const intent = detectIntent(message, conversation);
   const lower = message.toLowerCase();
   let confidence = 0.6;
 
   if (/^(hi|hello|hey|sup|yo|greetings)/.test(lower)) confidence = 0.9;
-  if (/(help|assist|guide|how to|tutorial)/.test(lower)) confidence = Math.max(confidence, 0.85);
-  if (/(build|create|make|setup|develop).*bot/.test(lower)) confidence = Math.max(confidence, 0.88);
-  if (/(error|bug|issue|problem|not work|broken|fix)/.test(lower)) confidence = Math.max(confidence, 0.9);
-  if (/(optimize|improve|better|enhance|faster|performance)/.test(lower)) confidence = Math.max(confidence, 0.8);
+  if (/(help|assist|guide|how to|tutorial)/.test(lower))
+    confidence = Math.max(confidence, 0.85);
+  if (/(build|create|make|setup|develop).*bot/.test(lower))
+    confidence = Math.max(confidence, 0.88);
+  if (/(error|bug|issue|problem|not work|broken|fix)/.test(lower))
+    confidence = Math.max(confidence, 0.9);
+  if (/(optimize|improve|better|enhance|faster|performance)/.test(lower))
+    confidence = Math.max(confidence, 0.8);
 
   // small boost if conversation history references similar intents
-  const recent = conversation.history.slice(-3).map((m) => m.content.toLowerCase()).join(" ");
+  const recent = conversation.history
+    .slice(-3)
+    .map((m) => m.content.toLowerCase())
+    .join(" ");
   if (recent.includes(intent)) confidence = Math.min(1, confidence + 0.05);
 
   return { intent, confidence } as const;
@@ -291,7 +316,7 @@ async function generateResponse(
   message: string,
   intent: string,
   conversation: ConversationState,
-  canvas?: any,
+  canvas?: any
 ) {
   const suggestions: AISuggestion[] = [];
   const actions: string[] = [];
@@ -313,7 +338,7 @@ async function generateResponse(
       const buildResponse = generateBuildGuidance(
         message,
         conversation,
-        canvas,
+        canvas
       );
       responseMessage = buildResponse.message;
       suggestions.push(...buildResponse.suggestions);
@@ -370,7 +395,7 @@ function generateGreeting(conversation: ConversationState): string {
 function generateHelpResponse(
   message: string,
   conversation: ConversationState,
-  canvas?: any,
+  canvas?: any
 ) {
   const msg = message.toLowerCase();
   const suggestions: AISuggestion[] = [];
@@ -442,7 +467,7 @@ function generateHelpResponse(
 function generateBuildGuidance(
   message: string,
   conversation: ConversationState,
-  canvas?: any,
+  canvas?: any
 ) {
   const msg = message.toLowerCase();
   const suggestions: AISuggestion[] = [];
@@ -569,7 +594,7 @@ function generateBuildGuidance(
 function answerQuestion(
   message: string,
   conversation: ConversationState,
-  canvas?: any,
+  canvas?: any
 ): string {
   const msg = message.toLowerCase();
 
@@ -614,12 +639,14 @@ function debugCanvas(canvas: any, message: string) {
     (b: Block) =>
       b.type !== "command_slash" &&
       b.type !== "event_listener" &&
-      !connectedIds.has(b.id),
+      !connectedIds.has(b.id)
   );
 
   if (orphaned.length > 0) {
     return {
-      message: `I found ${orphaned.length} disconnected block${orphaned.length > 1 ? "s" : ""}. Logic blocks need to be connected to a trigger (command or event) to work. Want me to suggest connections?`,
+      message: `I found ${orphaned.length} disconnected block${
+        orphaned.length > 1 ? "s" : ""
+      }. Logic blocks need to be connected to a trigger (command or event) to work. Want me to suggest connections?`,
       suggestions: [],
     };
   }
@@ -636,7 +663,7 @@ function debugCanvas(canvas: any, message: string) {
  */
 function explainConcept(
   message: string,
-  conversation: ConversationState,
+  conversation: ConversationState
 ): string {
   const msg = message.toLowerCase();
 
@@ -663,7 +690,9 @@ function suggestOptimizations(canvas: any) {
   return {
     message:
       suggestions.length > 0
-        ? `I found ${suggestions.length} optimization${suggestions.length > 1 ? "s" : ""} for your bot. Check the suggestions!`
+        ? `I found ${suggestions.length} optimization${
+            suggestions.length > 1 ? "s" : ""
+          } for your bot. Check the suggestions!`
         : "Your bot is looking efficient! Keep up the good work.",
     suggestions,
   };
@@ -675,7 +704,7 @@ function suggestOptimizations(canvas: any) {
 function generateGeneralResponse(
   message: string,
   conversation: ConversationState,
-  canvas?: any,
+  canvas?: any
 ): string {
   const encouragements = [
     "That's interesting! Tell me more about what you're trying to achieve.",
@@ -692,13 +721,13 @@ function generateGeneralResponse(
 function updateUserPatterns(
   conversation: ConversationState,
   message: string,
-  canvas?: any,
+  canvas?: any
 ) {
   // Track block type preferences
   if (canvas?.blocks) {
     canvas.blocks.forEach((block: Block) => {
       const existing = conversation.userPatterns.find(
-        (p) => p.type === block.type,
+        (p) => p.type === block.type
       );
       if (existing) {
         existing.frequency++;
@@ -732,7 +761,7 @@ function analyzeCanvas(canvas: any, context?: string): AISuggestion[] {
 
 async function getAISuggestions(
   canvas: any,
-  context?: string,
+  context?: string
 ): Promise<AISuggestion[]> {
   try {
     const blockCount = canvas.blocks?.length || 0;
@@ -749,20 +778,24 @@ Format your response as:
 
 Keep it very brief.`;
 
-    const response = await fetchWithTimeout(`${OLLAMA_BASE}/api/generate`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        model: MODEL_NAME,
-        prompt: prompt,
-        stream: false,
-        options: {
-          temperature: 0.7,
-          top_p: 0.9,
-          num_predict: 100,
-        },
-      }),
-    }, 8000);
+    const response = await fetchWithTimeout(
+      `${OLLAMA_BASE}/api/generate`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          model: MODEL_NAME,
+          prompt: prompt,
+          stream: false,
+          options: {
+            temperature: 0.7,
+            top_p: 0.9,
+            num_predict: 100,
+          },
+        }),
+      },
+      8000
+    );
 
     if (!response.ok) {
       const text = await response.text().catch(() => "");
@@ -800,7 +833,7 @@ Keep it very brief.`;
 
 async function getAIChatResponse(
   message: string,
-  canvas?: any,
+  canvas?: any
 ): Promise<string> {
   try {
     const blockCount = canvas?.blocks?.length || 0;
@@ -810,19 +843,23 @@ User: ${message}
 
 Provide a helpful, concise response about Discord bot development. Keep it under 100 words.`;
 
-    const response = await fetchWithTimeout(`${OLLAMA_BASE}/api/generate`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        model: MODEL_NAME,
-        prompt: prompt,
-        stream: false,
-        options: {
-          temperature: 0.7,
-          num_predict: 150,
-        },
-      }),
-    }, 10000);
+    const response = await fetchWithTimeout(
+      `${OLLAMA_BASE}/api/generate`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          model: MODEL_NAME,
+          prompt: prompt,
+          stream: false,
+          options: {
+            temperature: 0.7,
+            num_predict: 150,
+          },
+        }),
+      },
+      10000
+    );
 
     if (!response.ok) {
       const text = await response.text().catch(() => "");
@@ -831,10 +868,17 @@ Provide a helpful, concise response about Discord bot development. Keep it under
 
     try {
       const data = (await response.json()) as { response?: string } | string;
-      if (typeof data === "string") return data.trim() || "I'm here to help with your Discord bot!";
-      return (data.response || "").trim() || "I'm here to help with your Discord bot!";
+      if (typeof data === "string")
+        return data.trim() || "I'm here to help with your Discord bot!";
+      return (
+        (data.response || "").trim() ||
+        "I'm here to help with your Discord bot!"
+      );
     } catch (e) {
-      return (await response.text()).trim() || "I'm here to help with your Discord bot!";
+      return (
+        (await response.text()).trim() ||
+        "I'm here to help with your Discord bot!"
+      );
     }
   } catch (error) {
     console.error("Ollama chat failed:", error);

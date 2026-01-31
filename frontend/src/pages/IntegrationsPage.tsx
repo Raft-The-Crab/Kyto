@@ -1,141 +1,145 @@
+import { ProjectLayout } from '@/components/layout/ProjectLayout'
 import { motion } from 'framer-motion'
+import { Server, ExternalLink, Link2, Webhook, Key, Check, Copy } from 'lucide-react'
 import { useState } from 'react'
-import { ExternalLink, Check, Copy, AlertCircle, Key, Link2, Server, Webhook } from 'lucide-react'
+import { Button } from '@/components/ui/Button'
+import { cn } from '@/lib/utils'
+import { toast } from 'sonner'
 
-interface IntegrationStep {
-  title: string
-  description: string
-  action?: () => void
-}
+const discordPortalUrl = 'https://discord.com/developers/applications'
 
-export function IntegrationsPage() {
-  const [copiedItem, setCopiedItem] = useState<string | null>(null)
+const setupSteps = [
+  {
+    title: 'Create Application',
+    description: 'Go to the Discord Developer Portal and create a new application.',
+  },
+  {
+    title: 'Get Client ID',
+    description: 'Copy the Application ID (Client ID) from the General Information tab.',
+  },
+  {
+    title: 'Add Bot User',
+    description: 'Go to the Bot tab and click "Add Bot" to generate a token.',
+  },
+  {
+    title: 'Configure Intents',
+    description: 'Enable Message Content and Server Members intents for full functionality.',
+  },
+]
+
+const permissions = [
+  { name: 'Administrator', value: 8 },
+  { name: 'Manage Server', value: 32 },
+  { name: 'Manage Roles', value: 268435456 },
+  { name: 'Kick Members', value: 2 },
+  { name: 'Ban Members', value: 4 },
+  { name: 'Send Messages', value: 2048 },
+  { name: 'Manage Messages', value: 8192 },
+  { name: 'Read History', value: 65536 },
+]
+
+export default function IntegrationsPage() {
   const [activeSection, setActiveSection] = useState<'setup' | 'oauth' | 'webhooks'>('setup')
-
-  const copyToClipboard = (text: string, label: string) => {
-    navigator.clipboard.writeText(text)
-    setCopiedItem(label)
-    setTimeout(() => setCopiedItem(null), 2000)
-  }
-
-  const discordPortalUrl = 'https://discord.com/developers/applications'
-  
-  const setupSteps: IntegrationStep[] = [
-    {
-      title: 'Create Discord Application',
-      description: 'Go to the Discord Developer Portal and click "New Application"',
-    },
-    {
-      title: 'Create a Bot',
-      description: 'Navigate to the "Bot" section and click "Add Bot"',
-    },
-    {
-      title: 'Copy Bot Token',
-      description: 'Click "Reset Token" and copy your bot token. Keep this secret!',
-    },
-    {
-      title: 'Set Intents',
-      description: 'Enable "Server Members Intent" and "Message Content Intent" if needed',
-    },
-    {
-      title: 'Generate Invite URL',
-      description: 'Go to OAuth2 → URL Generator, select "bot" and "applications.commands"',
-    },
-  ]
-
-  const permissions = [
-    { name: 'Send Messages', value: 2048 },
-    { name: 'Manage Messages', value: 8192 },
-    { name: 'Embed Links', value: 16384 },
-    { name: 'Read Message History', value: 65536 },
-    { name: 'Add Reactions', value: 64 },
-    { name: 'Use Slash Commands', value: 2147483648 },
-    { name: 'Kick Members', value: 2 },
-    { name: 'Ban Members', value: 4 },
-    { name: 'Manage Roles', value: 268435456 },
-    { name: 'Moderate Members', value: 1099511627776 },
-  ]
-
-  const [selectedPermissions, setSelectedPermissions] = useState<number[]>([
-    2048, 16384, 65536, 2147483648 // Basic permissions
-  ])
+  const [selectedPermissions, setSelectedPermissions] = useState<number[]>([])
+  const [copiedItem, setCopiedItem] = useState<string | null>(null)
 
   const togglePermission = (value: number) => {
     setSelectedPermissions(prev =>
-      prev.includes(value)
-        ? prev.filter(p => p !== value)
-        : [...prev, value]
+      prev.includes(value) ? prev.filter(p => p !== value) : [...prev, value]
     )
   }
 
   const calculatePermissionInt = () => {
-    return selectedPermissions.reduce((a, b) => a + b, 0)
+    return selectedPermissions.reduce((acc, curr) => acc | curr, 0)
   }
 
-  const generateInviteUrl = (clientId: string = 'YOUR_CLIENT_ID') => {
-    const perms = calculatePermissionInt()
-    return `https://discord.com/api/oauth2/authorize?client_id=${clientId}&permissions=${perms}&scope=bot%20applications.commands`
+  const generateInviteUrl = () => {
+    const clientId = 'YOUR_CLIENT_ID' // Placeholder
+    return `https://discord.com/api/oauth2/authorize?client_id=${clientId}&permissions=${calculatePermissionInt()}&scope=bot%20applications.commands`
+  }
+
+  const copyToClipboard = (text: string, type: string) => {
+    navigator.clipboard.writeText(text)
+    setCopiedItem(type)
+    toast.success(`${type} copied to clipboard!`)
+    setTimeout(() => setCopiedItem(null), 2000)
   }
 
   return (
-    <div className="min-h-screen bg-zinc-950 text-white">
-      <div className="max-w-5xl mx-auto px-6 py-16">
+    <ProjectLayout>
+      <div className="max-w-5xl mx-auto py-12 px-6 animate-in fade-in duration-700">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
         >
           {/* Header */}
-          <div className="text-center mb-12">
-            <h1 className="text-4xl font-black uppercase tracking-tight mb-2">
+          <div className="text-center mb-16 space-y-4">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 border border-primary/20 text-primary label-text mx-auto text-xs font-bold uppercase tracking-wider">
+              Deployment & Connectivity
+            </div>
+            <h1 className="heading-primary text-5xl font-black text-foreground">
               Discord Integration
             </h1>
-            <p className="text-zinc-400">
-              Set up your Discord bot and connect it to your server
+            <p className="body-text text-base max-w-2xl mx-auto text-muted-foreground">
+              Seamlessly link your workspace to the Discord Cloud using our professional integration
+              suite.
             </p>
           </div>
 
           {/* Quick Action Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-12">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-16">
             <a
               href={discordPortalUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="p-6 bg-[#5865F2] border-4 border-black rounded-lg hover:transform hover:-translate-y-1 transition-transform shadow-[4px_4px_0_0_#000] flex items-center gap-4"
+              className="p-8 glass rounded-2xl flex flex-col gap-6 group shadow-sm hover:shadow-md border border-border/50 hover:border-primary/50 transition-all"
             >
-              <Server className="w-8 h-8" />
-              <div>
-                <h3 className="font-bold">Developer Portal</h3>
-                <p className="text-sm opacity-80">Create & manage bots</p>
+              <div className="w-14 h-14 rounded-2xl bg-primary text-primary-foreground flex items-center justify-center group-hover:scale-110 transition-all shadow-lg shadow-primary/30">
+                <Server className="w-7 h-7" />
               </div>
-              <ExternalLink className="w-5 h-5 ml-auto" />
+              <div>
+                <h3 className="heading-tertiary text-xl font-bold">Developer Portal</h3>
+                <p className="body-text text-sm mt-1 text-muted-foreground">
+                  Create and manage your bot applications on Discord.
+                </p>
+              </div>
+              <ExternalLink className="w-4 h-4 ml-auto text-muted-foreground group-hover:text-primary transition-all" />
             </a>
-            
+
             <button
               onClick={() => setActiveSection('oauth')}
-              className="p-6 bg-zinc-800 border-4 border-black rounded-lg hover:transform hover:-translate-y-1 transition-transform shadow-[4px_4px_0_0_#000] flex items-center gap-4 text-left"
+              className="p-8 glass rounded-2xl flex flex-col gap-6 group text-left shadow-sm hover:shadow-md border border-border/50 hover:border-secondary/50 transition-all"
             >
-              <Link2 className="w-8 h-8 text-emerald-400" />
+              <div className="w-14 h-14 rounded-2xl bg-secondary text-secondary-foreground flex items-center justify-center group-hover:scale-110 transition-all shadow-lg shadow-secondary/30">
+                <Link2 className="w-7 h-7" />
+              </div>
               <div>
-                <h3 className="font-bold">Generate Invite</h3>
-                <p className="text-sm text-zinc-400">Create bot invite URL</p>
+                <h3 className="heading-tertiary text-xl font-bold">Invite Generator</h3>
+                <p className="body-text text-sm mt-1 text-muted-foreground">
+                  Create a custom bot invite URL with permissions.
+                </p>
               </div>
             </button>
-            
+
             <button
               onClick={() => setActiveSection('webhooks')}
-              className="p-6 bg-zinc-800 border-4 border-black rounded-lg hover:transform hover:-translate-y-1 transition-transform shadow-[4px_4px_0_0_#000] flex items-center gap-4 text-left"
+              className="p-8 glass rounded-2xl flex flex-col gap-6 group text-left shadow-sm hover:shadow-md border border-border/50 hover:border-yellow-500/50 transition-all"
             >
-              <Webhook className="w-8 h-8 text-yellow-400" />
+              <div className="w-14 h-14 rounded-2xl bg-yellow-500 text-white flex items-center justify-center group-hover:scale-110 transition-all shadow-lg shadow-yellow-500/30">
+                <Webhook className="w-7 h-7" />
+              </div>
               <div>
-                <h3 className="font-bold">Webhooks</h3>
-                <p className="text-sm text-zinc-400">Send messages via webhook</p>
+                <h3 className="heading-tertiary text-xl font-bold">Webhooks</h3>
+                <p className="body-text text-sm mt-1 text-muted-foreground">
+                  Send messages to channels without a bot token.
+                </p>
               </div>
             </button>
           </div>
 
           {/* Tab Navigation */}
-          <div className="flex gap-2 mb-6">
+          <div className="flex bg-muted/20 p-1 rounded-2xl border border-border/50 mb-12">
             {[
               { id: 'setup', label: 'Setup Guide' },
               { id: 'oauth', label: 'Invite Generator' },
@@ -144,184 +148,216 @@ export function IntegrationsPage() {
               <button
                 key={tab.id}
                 onClick={() => setActiveSection(tab.id as any)}
-                className={`px-4 py-2 rounded-lg border-2 border-black font-bold transition-colors ${
+                className={cn(
+                  'flex-1 py-3 px-6 rounded-xl font-bold transition-all text-[13px] uppercase tracking-wider',
                   activeSection === tab.id
-                    ? 'bg-[#5865F2] text-white'
-                    : 'bg-zinc-800 hover:bg-zinc-700'
-                }`}
+                    ? 'bg-background text-foreground shadow-sm'
+                    : 'text-muted-foreground hover:text-foreground hover:bg-background/50'
+                )}
               >
                 {tab.label}
               </button>
             ))}
           </div>
 
-          {/* Setup Guide Section */}
-          {activeSection === 'setup' && (
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              className="space-y-4"
-            >
-              <div className="bg-zinc-900 border-4 border-black rounded-lg p-6">
-                <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
-                  <Key className="w-6 h-6 text-[#5865F2]" />
-                  Bot Setup Guide
-                </h2>
-                
-                <div className="space-y-4">
+          {/* Content Sections */}
+          <div className="glass p-8 rounded-2xl border border-border/50 min-h-[400px]">
+            {activeSection === 'setup' && (
+              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-6">
+                <div className="flex items-center gap-3 mb-6">
+                  <Key className="w-6 h-6 text-primary" />
+                  <h2 className="text-xl font-bold text-foreground">Bot Setup Guide</h2>
+                </div>
+
+                <div className="grid gap-4">
                   {setupSteps.map((step, index) => (
                     <div
                       key={index}
-                      className="flex gap-4 p-4 bg-zinc-800 rounded-lg border-2 border-zinc-700"
+                      className="flex gap-6 p-6 bg-muted/20 rounded-2xl border border-border/50 hover:border-primary/30 transition-colors"
                     >
-                      <div className="w-8 h-8 bg-[#5865F2] rounded-full flex items-center justify-center font-bold flex-shrink-0">
+                      <div className="w-10 h-10 bg-primary text-primary-foreground rounded-xl flex items-center justify-center font-black shrink-0 shadow-sm">
                         {index + 1}
                       </div>
                       <div>
-                        <h3 className="font-bold">{step.title}</h3>
-                        <p className="text-sm text-zinc-400">{step.description}</p>
+                        <h3 className="text-base font-bold text-foreground">{step.title}</h3>
+                        <p className="text-[13px] text-muted-foreground font-medium leading-relaxed">
+                          {step.description}
+                        </p>
                       </div>
                     </div>
                   ))}
                 </div>
 
-                <a
-                  href={discordPortalUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="mt-6 inline-flex items-center gap-2 px-6 py-3 bg-[#5865F2] text-white font-bold uppercase border-4 border-black rounded-lg hover:transform hover:-translate-y-1 transition-transform shadow-[4px_4px_0_0_#000]"
+                <Button
+                  size="lg"
+                  onClick={() => window.open(discordPortalUrl, '_blank')}
+                  className="mt-8 h-12 px-8 flex items-center gap-2"
                 >
-                  Open Developer Portal
-                  <ExternalLink className="w-4 h-4" />
-                </a>
-              </div>
+                  Open Developer Portal <ExternalLink className="w-4 h-4" />
+                </Button>
+              </motion.div>
+            )}
 
-              {/* Important Notice */}
-              <div className="bg-yellow-500/10 border-4 border-yellow-500 rounded-lg p-4 flex gap-3">
-                <AlertCircle className="w-6 h-6 text-yellow-500 flex-shrink-0" />
-                <div>
-                  <h4 className="font-bold text-yellow-500">Keep Your Token Secret!</h4>
-                  <p className="text-sm text-zinc-300">
-                    Never share your bot token publicly. If compromised, regenerate it immediately in the Developer Portal.
-                  </p>
-                </div>
-              </div>
-            </motion.div>
-          )}
-
-          {/* OAuth Generator Section */}
-          {activeSection === 'oauth' && (
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              className="bg-zinc-900 border-4 border-black rounded-lg p-6"
-            >
-              <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
-                <Link2 className="w-6 h-6 text-emerald-400" />
-                Bot Invite URL Generator
-              </h2>
-
-              <div className="mb-6">
-                <label className="block text-sm font-bold mb-2">Bot Client ID</label>
-                <input
-                  type="text"
-                  placeholder="Enter your Client ID from Developer Portal"
-                  className="w-full px-4 py-3 bg-zinc-800 border-4 border-black rounded-lg focus:outline-none focus:border-[#5865F2]"
-                />
-              </div>
-
-              <div className="mb-6">
-                <label className="block text-sm font-bold mb-2">Bot Permissions</label>
-                <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
-                  {permissions.map(perm => (
-                    <button
-                      key={perm.value}
-                      onClick={() => togglePermission(perm.value)}
-                      className={`p-2 text-sm rounded-lg border-2 transition-colors flex items-center gap-2 ${
-                        selectedPermissions.includes(perm.value)
-                          ? 'bg-[#5865F2] border-[#5865F2]'
-                          : 'bg-zinc-800 border-zinc-700 hover:border-zinc-500'
-                      }`}
-                    >
-                      {selectedPermissions.includes(perm.value) && <Check className="w-4 h-4" />}
-                      {perm.name}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              <div className="mb-4">
-                <label className="block text-sm font-bold mb-2">Permission Integer</label>
-                <div className="px-4 py-3 bg-zinc-800 border-4 border-black rounded-lg font-mono">
-                  {calculatePermissionInt()}
-                </div>
-              </div>
-
-              <div className="mb-6">
-                <label className="block text-sm font-bold mb-2">Generated Invite URL</label>
-                <div className="flex gap-2">
-                  <input
-                    type="text"
-                    value={generateInviteUrl()}
-                    readOnly
-                    className="flex-1 px-4 py-3 bg-zinc-800 border-4 border-black rounded-lg font-mono text-sm"
-                  />
-                  <button
-                    onClick={() => copyToClipboard(generateInviteUrl(), 'url')}
-                    className="px-4 py-3 bg-[#5865F2] border-4 border-black rounded-lg hover:transform hover:-translate-y-1 transition-transform"
-                  >
-                    {copiedItem === 'url' ? <Check className="w-5 h-5" /> : <Copy className="w-5 h-5" />}
-                  </button>
-                </div>
-              </div>
-            </motion.div>
-          )}
-
-          {/* Webhooks Section */}
-          {activeSection === 'webhooks' && (
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              className="bg-zinc-900 border-4 border-black rounded-lg p-6"
-            >
-              <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
-                <Webhook className="w-6 h-6 text-yellow-400" />
-                Discord Webhooks
-              </h2>
-
-              <p className="text-zinc-300 mb-6">
-                Webhooks let you send messages to Discord channels without a bot. Perfect for notifications!
-              </p>
-
-              <div className="space-y-4">
-                <div className="p-4 bg-zinc-800 rounded-lg">
-                  <h3 className="font-bold mb-2">Create a Webhook</h3>
-                  <ol className="list-decimal list-inside text-sm text-zinc-400 space-y-1">
-                    <li>Open Discord server settings</li>
-                    <li>Go to Integrations → Webhooks</li>
-                    <li>Click "New Webhook"</li>
-                    <li>Copy the webhook URL</li>
-                  </ol>
+            {activeSection === 'oauth' && (
+              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-8">
+                <div className="flex items-center gap-3 mb-6">
+                  <Link2 className="w-6 h-6 text-secondary" />
+                  <h2 className="text-xl font-bold text-foreground">Invite Generator</h2>
                 </div>
 
-                <div className="p-4 bg-zinc-800 rounded-lg">
-                  <h3 className="font-bold mb-2">Example: Send a Message</h3>
-                  <pre className="mt-2 bg-zinc-900 p-4 rounded-lg overflow-x-auto">
-                    <code className="text-sm text-emerald-400">{`fetch('YOUR_WEBHOOK_URL', {
-  method: 'POST',
-  headers: { 'Content-Type': 'application/json' },
-  body: JSON.stringify({
-    content: 'Hello from Kyto!',
-    username: 'Kyto Bot',
-  })
-});`}</code>
-                  </pre>
+                <div className="grid gap-6">
+                  <div className="space-y-3">
+                    <label className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">
+                      Bot Client ID
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="Enter your Client ID"
+                      className="w-full px-4 py-3 bg-muted/20 border border-border rounded-xl font-mono text-sm focus:ring-2 focus:ring-primary/50 outline-none text-foreground"
+                    />
+                  </div>
+
+                  <div className="space-y-3">
+                    <label className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">
+                      Bot Permissions
+                    </label>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                      {permissions.map(perm => (
+                        <button
+                          key={perm.value}
+                          onClick={() => togglePermission(perm.value)}
+                          className={cn(
+                            'p-4 text-[13px] font-bold rounded-xl border transition-all flex items-center gap-3',
+                            selectedPermissions.includes(perm.value)
+                              ? 'bg-primary border-primary text-primary-foreground shadow-lg shadow-primary/20'
+                              : 'bg-muted/10 border-border text-muted-foreground hover:text-foreground'
+                          )}
+                        >
+                          <div
+                            className={cn(
+                              'w-4 h-4 rounded border flex items-center justify-center transition-colors',
+                              selectedPermissions.includes(perm.value)
+                                ? 'bg-background border-background'
+                                : 'border-border'
+                            )}
+                          >
+                            {selectedPermissions.includes(perm.value) && (
+                              <Check className="w-3 h-3 text-primary" />
+                            )}
+                          </div>
+                          {perm.name}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="grid md:grid-cols-2 gap-6 pt-6 border-t border-border/50">
+                    <div className="space-y-3">
+                      <label className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">
+                        Permission Int
+                      </label>
+                      <div className="px-6 py-3.5 bg-primary/5 rounded-xl font-mono text-2xl font-bold text-primary border border-primary/20">
+                        {calculatePermissionInt()}
+                      </div>
+                    </div>
+                    <div className="space-y-3">
+                      <label className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">
+                        Invite URL
+                      </label>
+                      <div className="flex gap-3">
+                        <input
+                          type="text"
+                          value={generateInviteUrl()}
+                          readOnly
+                          className="flex-1 px-6 py-3.5 bg-muted/20 border border-border rounded-xl font-mono text-sm overflow-hidden text-ellipsis text-foreground"
+                        />
+                        <button
+                          onClick={() => copyToClipboard(generateInviteUrl(), 'URL')}
+                          className="w-12 h-12 bg-primary text-primary-foreground rounded-xl flex items-center justify-center hover:scale-105 transition-transform shadow-sm shrink-0 active:scale-95"
+                        >
+                          {copiedItem === 'URL' ? (
+                            <Check className="w-5 h-5" />
+                          ) : (
+                            <Copy className="w-5 h-5" />
+                          )}
+                        </button>
+                      </div>
+                    </div>
+                  </div>
                 </div>
-              </div>
-            </motion.div>
-          )}
+              </motion.div>
+            )}
+
+            {activeSection === 'webhooks' && (
+              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-8">
+                <div className="flex items-center gap-3 mb-6">
+                  <Webhook className="w-6 h-6 text-yellow-500" />
+                  <h2 className="text-xl font-bold text-foreground">Discord Webhooks</h2>
+                </div>
+
+                <div className="space-y-8">
+                  <div className="p-8 bg-yellow-500/5 border border-yellow-500/20 rounded-2xl">
+                    <p className="text-yellow-600 dark:text-yellow-500 font-medium m-0 leading-relaxed text-[13px]">
+                      Webhooks are a low-latency way to push messages directly to a Discord channel.
+                      No bot login required.
+                    </p>
+                  </div>
+
+                  <div className="grid md:grid-cols-2 gap-8">
+                    <div className="space-y-4">
+                      <h3 className="text-base font-bold text-foreground">Quick Start</h3>
+                      <ol className="space-y-4 text-muted-foreground font-medium text-[13px]">
+                        <li className="flex items-center gap-3">
+                          <div className="w-5 h-5 rounded-full bg-muted flex items-center justify-center text-[10px] font-black border border-border shrink-0">
+                            1
+                          </div>
+                          Right-click channel →{' '}
+                          <span className="text-foreground">Edit Channel</span>
+                        </li>
+                        <li className="flex items-center gap-3">
+                          <div className="w-5 h-5 rounded-full bg-muted flex items-center justify-center text-[10px] font-black border border-border shrink-0">
+                            2
+                          </div>
+                          Go to <span className="text-foreground">Integrations</span>
+                        </li>
+                        <li className="flex items-center gap-3">
+                          <div className="w-5 h-5 rounded-full bg-muted flex items-center justify-center text-[10px] font-black border border-border shrink-0">
+                            3
+                          </div>
+                          Create <span className="text-primary">New Webhook</span>
+                        </li>
+                        <li className="flex items-center gap-3">
+                          <div className="w-5 h-5 rounded-full bg-muted flex items-center justify-center text-[10px] font-black border border-border shrink-0">
+                            4
+                          </div>
+                          Copy the generated <span className="text-secondary">Webhook URL</span>
+                        </li>
+                      </ol>
+                    </div>
+
+                    <div className="space-y-4">
+                      <h3 className="text-base font-bold text-foreground">Implementation</h3>
+                      <div className="bg-zinc-950 rounded-2xl p-6 border border-white/5 shadow-inner">
+                        <code className="text-[12px] text-emerald-400 block whitespace-pre overflow-x-auto leading-relaxed font-mono">
+                          {`// Send message via Fetch API
+ fetch('YOUR_WEBHOOK_URL', {
+   method: 'POST',
+   headers: { 'Content-Type': 'application/json' },
+   body: JSON.stringify({
+     content: 'Hello from Kyto!',
+     username: 'Kyton'
+   })
+ });`}
+                        </code>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </motion.div>
+            )}
+          </div>
         </motion.div>
       </div>
-    </div>
+    </ProjectLayout>
   )
 }

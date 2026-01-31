@@ -1,115 +1,246 @@
+import { useState, useMemo } from 'react'
+import { Plus, Terminal, Trash2, Edit3, Zap, Search } from 'lucide-react'
 import { useNavigate, Link } from 'react-router-dom'
-import { Plus, Terminal, Trash2, Edit3 } from 'lucide-react'
 import { useProjectStore } from '@/store/projectStore'
+import { ProjectLayout } from '@/components/layout/ProjectLayout'
 import { Button } from '@/components/ui/Button'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/Card'
-import { NeoLayout } from '@/components/layout/NeoLayout'
-import { BuilderTabs } from '@/components/layout/BuilderTabs'
+import { cn } from '@/lib/utils'
+import { motion, AnimatePresence } from 'framer-motion'
+import { formatDistanceToNow } from 'date-fns'
 
 export default function CommandsListPage() {
   const { commands, deleteCommand, createCommand } = useProjectStore()
   const navigate = useNavigate()
+  const [searchQuery, setSearchQuery] = useState('')
+  const [sortBy, setSortBy] = useState<'name' | 'updated'>('name')
+  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid')
+
+  const filteredCommands = useMemo(() => {
+    return commands
+      .filter(cmd => cmd.name.toLowerCase().includes(searchQuery.toLowerCase()))
+      .sort((a, b) => {
+        if (sortBy === 'name') return a.name.localeCompare(b.name)
+        return (b.updatedAt || 0) - (a.updatedAt || 0)
+      })
+  }, [commands, searchQuery, sortBy])
 
   const handleCreate = () => {
     const id = createCommand()
     navigate(`/builder/commands/${id}`)
   }
 
-  return (
-    <NeoLayout>
-      <div className="space-y-8 animate-in fade-in duration-500">
-        <BuilderTabs />
+  const handleSortChange = (newSort: 'name' | 'updated') => {
+    setSortBy(newSort)
+  }
 
-        <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-8">
-          <div>
-            <h1 className="text-4xl font-black text-slate-900 dark:text-white tracking-tight mb-2">
-              Slash Commands
-            </h1>
-            <p className="text-slate-500 font-medium text-lg">
-              Define how your bot responds to user inputs.
+  return (
+    <ProjectLayout>
+      <div className="max-w-7xl mx-auto py-10 px-6 space-y-8 animate-in fade-in duration-500">
+        {/* Header Section */}
+        <div className="flex flex-col md:flex-row items-start md:items-end justify-between gap-6">
+          <div className="space-y-2">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-[10px] font-black uppercase tracking-widest">
+              <Zap className="w-3 h-3 fill-emerald-400" /> Interaction Layer
+            </div>
+            <h1 className="text-4xl font-black tracking-tight text-white">Slash Commands</h1>
+            <p className="text-slate-400 font-medium text-sm max-w-lg">
+              Define the primary interface for your users. Build complex argument logic and
+              responses.
             </p>
           </div>
-          <Button onClick={handleCreate} className="gap-2 shadow-neo-sm">
-            <Plus className="w-4 h-4" /> Create Command
+          <Button
+            onClick={handleCreate}
+            className="bg-emerald-500 hover:bg-emerald-600 text-black font-bold h-12 px-6 rounded-xl shadow-lg shadow-emerald-500/20 transition-all hover:scale-105 active:scale-95 flex items-center gap-2"
+          >
+            <Plus className="w-5 h-5" />
+            New Command
           </Button>
         </div>
 
-        <div className="grid gap-6">
-          {commands.length === 0 ? (
-            <Card className="border-2 border-slate-900 dark:border-slate-700 bg-white dark:bg-slate-900 shadow-neo">
-              <CardContent className="flex flex-col items-center justify-center py-16 text-center">
-                <div className="p-4 rounded-xl bg-slate-100 dark:bg-slate-800 mb-4 border-2 border-slate-900 dark:border-slate-700">
-                  <Terminal className="w-8 h-8 text-slate-900 dark:text-white" />
+        {/* Toolbar */}
+        <div className="flex flex-col sm:flex-row gap-4 items-center justify-between bg-transparent p-0 sticky top-20 z-30">
+          <div className="relative w-full sm:w-96 group">
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500 group-focus-within:text-emerald-400 transition-colors" />
+            <input
+              type="text"
+              placeholder="Search commands..."
+              value={searchQuery}
+              onChange={e => setSearchQuery(e.target.value)}
+              className="w-full bg-card/95 border-none shadow-soft text-sm rounded-2xl pl-11 pr-4 py-3 focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all placeholder:text-muted-foreground text-foreground"
+            />
+          </div>
+
+          <div className="flex items-center gap-2 w-full sm:w-auto">
+            <div className="flex p-1 bg-black/20 rounded-xl border border-white/5">
+              <button
+                onClick={() => setViewMode('grid')}
+                className={cn(
+                  'p-2 rounded-lg transition-all',
+                  viewMode === 'grid'
+                    ? 'bg-white/10 text-white'
+                    : 'text-slate-500 hover:text-slate-300'
+                )}
+              >
+                <div className="w-4 h-4 grid grid-cols-2 gap-0.5">
+                  <div className="bg-current rounded-[1px]" />
+                  <div className="bg-current rounded-[1px]" />
+                  <div className="bg-current rounded-[1px]" />
+                  <div className="bg-current rounded-[1px]" />
                 </div>
-                <h3 className="text-xl font-black text-slate-900 dark:text-white mb-2">
-                  No commands yet
-                </h3>
-                <p className="text-slate-500 font-medium mb-6 max-w-sm">
-                  Create your first slash command to start adding interactivity to your bot.
-                </p>
-                <Button onClick={handleCreate} className="shadow-neo-sm">
+              </button>
+              <button
+                onClick={() => setViewMode('list')}
+                className={cn(
+                  'p-2 rounded-lg transition-all',
+                  viewMode === 'list'
+                    ? 'bg-white/10 text-white'
+                    : 'text-slate-500 hover:text-slate-300'
+                )}
+              >
+                <div className="w-4 h-4 flex flex-col gap-1">
+                  <div className="h-0.5 w-full bg-current rounded-full" />
+                  <div className="h-0.5 w-full bg-current rounded-full" />
+                  <div className="h-0.5 w-full bg-current rounded-full" />
+                </div>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* Grid View */}
+        <div
+          className={cn(
+            'grid gap-6',
+            viewMode === 'grid' ? 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3' : 'grid-cols-1'
+          )}
+        >
+          <AnimatePresence mode="popLayout">
+            {filteredCommands.length === 0 ? (
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                className="col-span-full py-20 text-center space-y-4"
+              >
+                <div className="w-20 h-20 bg-white/5 rounded-3xl flex items-center justify-center mx-auto mb-6 border border-white/10">
+                  <Terminal className="w-10 h-10 text-slate-600" />
+                </div>
+                <h3 className="text-xl font-bold text-white">No commands found</h3>
+                <p className="text-slate-500">Create your first slash command to get started.</p>
+                <Button variant="outline" onClick={handleCreate} className="mt-4">
                   Create Command
                 </Button>
-              </CardContent>
-            </Card>
-          ) : (
-            commands.map((cmd: any) => (
-              <Card
-                key={cmd.id}
-                className="group hover:border-indigo-600 dark:hover:border-indigo-500 transition-all border-2 border-black/10 dark:border-slate-800 shadow-neo-sm hover:translate-y-[-2px] hover:shadow-neo cursor-default rounded-3xl bg-white dark:bg-slate-900"
-              >
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <div className="flex items-center gap-4">
-                    <div className="p-2 bg-slate-100 dark:bg-slate-800 rounded-lg group-hover:bg-indigo-50 dark:group-hover:bg-indigo-900/20 transition-colors border-2 border-transparent group-hover:border-indigo-200 dark:group-hover:border-indigo-500/30">
-                      <Terminal className="w-5 h-5 text-slate-500 group-hover:text-indigo-600 dark:text-slate-400 dark:group-hover:text-indigo-400" />
-                    </div>
-                    <div>
-                      <CardTitle className="text-xl font-black flex items-center gap-2">
-                        /{cmd.name}
-                        <span className="text-xs px-2 py-0.5 bg-slate-100 dark:bg-slate-800 rounded-lg font-mono text-slate-500 font-bold border border-slate-200 dark:border-slate-700">
-                          slash
-                        </span>
-                      </CardTitle>
-                      <CardDescription className="line-clamp-1 mt-1 font-medium">
-                        {cmd.description}
-                      </CardDescription>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <Link to={`/builder/commands/${cmd.id}`}>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="hover:bg-indigo-50 dark:hover:bg-indigo-900/20 hover:text-indigo-600"
+              </motion.div>
+            ) : (
+              filteredCommands.map(cmd => (
+                <motion.div
+                  key={cmd.id}
+                  layout
+                  initial={{ opacity: 0, scale: 0.95 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.95 }}
+                  transition={{ duration: 0.2 }}
+                  className={cn(
+                    'group relative overflow-hidden rounded-3xl border-none bg-card/95 transition-all hover:scale-[1.01] hover:shadow-xl shadow-soft',
+                    viewMode === 'list' && 'flex items-center justify-between p-6'
+                  )}
+                >
+                  <div
+                    className={cn(
+                      'space-y-4 p-6',
+                      viewMode === 'list' && 'p-0 space-y-0 flex items-center gap-6 flex-1'
+                    )}
+                  >
+                    {/* Header */}
+                    <div className="flex items-start justify-between">
+                      <div className="flex items-center gap-4">
+                        <div className="flex items-center gap-2">
+                          <label className="text-xs font-black text-muted-foreground">
+                            Sort by:
+                          </label>
+                          <select
+                            value={sortBy}
+                            onChange={e => handleSortChange(e.target.value as 'name' | 'updated')}
+                            className="px-3 py-2 bg-background border border-border rounded-lg text-sm"
+                          >
+                            <option value="name">Name</option>
+                            <option value="updated">Last Updated</option>
+                          </select>
+                        </div>
+                        <div className="w-12 h-12 rounded-2xl bg-linear-to-br from-emerald-500/20 to-emerald-500/5 border border-emerald-500/20 flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform duration-500">
+                          <Terminal className="w-6 h-6 text-emerald-400" />
+                        </div>
+                        <div>
+                          <h3 className="font-bold text-lg text-white group-hover:text-emerald-400 transition-colors">
+                            /{cmd.name}
+                          </h3>
+                          <div className="flex items-center gap-2 text-xs font-medium text-slate-500 mt-1">
+                            <span>
+                              Updated{' '}
+                              {formatDistanceToNow(cmd.updatedAt || Date.now(), {
+                                addSuffix: true,
+                              })}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Actions */}
+                      <div
+                        className={cn(
+                          'flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity',
+                          viewMode === 'list' && 'opacity-100'
+                        )}
                       >
-                        <Edit3 className="w-4 h-4 stroke-[2.5px]" />
-                      </Button>
-                    </Link>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20"
-                      onClick={() => deleteCommand(cmd.id)}
-                    >
-                      <Trash2 className="w-4 h-4 stroke-[2.5px]" />
-                    </Button>
+                        <Link to={`/builder/commands/${cmd.id}`}>
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            className="h-9 w-9 hover:bg-white/10 hover:text-white"
+                          >
+                            <Edit3 className="w-4 h-4" />
+                          </Button>
+                        </Link>
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          className="h-9 w-9 hover:bg-red-500/20 hover:text-red-400"
+                          onClick={e => {
+                            e.preventDefault()
+                            deleteCommand(cmd.id)
+                          }}
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    </div>
+
+                    {/* Description (Grid only) */}
+                    {viewMode === 'grid' && (
+                      <p className="text-slate-400 text-sm leading-relaxed line-clamp-2 min-h-[40px]">
+                        {cmd.description || 'No description provided.'}
+                      </p>
+                    )}
                   </div>
-                </CardHeader>
-                <CardContent>
-                  <div className="flex items-center gap-4 text-sm text-slate-500 font-bold">
-                    <span className="flex items-center gap-2">
-                      <div className="w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]" />
-                      Active
-                    </span>
-                    <span className="text-slate-300">•</span>
-                    <span>Updated just now</span>
-                  </div>
-                </CardContent>
-              </Card>
-            ))
-          )}
+
+                  {/* Footer Stats (Grid Only) */}
+                  {viewMode === 'grid' && (
+                    <div className="px-6 py-4 border-t border-white/5 bg-black/20 flex items-center justify-between text-xs font-medium text-slate-500">
+                      <div className="flex items-center gap-3">
+                        <span className="flex items-center gap-1.5 list-disc">
+                          ID:{' '}
+                          <code className="bg-white/5 px-1.5 py-0.5 rounded text-slate-400 font-mono">
+                            {cmd.id.slice(0, 6)}
+                          </code>
+                        </span>
+                      </div>
+                    </div>
+                  )}
+                </motion.div>
+              ))
+            )}
+          </AnimatePresence>
         </div>
       </div>
-    </NeoLayout>
+    </ProjectLayout>
   )
 }

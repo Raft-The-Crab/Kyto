@@ -1,10 +1,14 @@
 import { Hono } from "hono";
 import { zValidator } from "@hono/zod-validator";
 import { z } from "zod";
-import type { ExportRequest, ExportResponse, Block, Connection } from "../types";
+import type {
+  ExportRequest,
+  ExportResponse,
+  Block,
+  Connection,
+} from "../types";
 
 export const exportRoutes = new Hono();
-
 
 const exportSchema = z.object({
   canvas: z.object({
@@ -29,14 +33,14 @@ exportRoutes.post("/", zValidator("json", exportSchema), async (c) => {
       blocks: data.canvas.blocks.length,
       user: c.req.header("X-User-ID"),
       preview: Boolean(c.req.query("preview")),
-      format: c.req.query("format") || 'files',
+      format: c.req.query("format") || "files",
     });
 
     const isJs = data.language === "discord.js";
     const exporter = new BotExporter(data, isJs);
 
     // Preview mode: return file list & optional content (no zip)
-    if (c.req.query("preview") === 'true') {
+    if (c.req.query("preview") === "true") {
       const files = exporter.export().files;
 
       // Run lightweight validation and attach warnings/errors
@@ -51,15 +55,15 @@ exportRoutes.post("/", zValidator("json", exportSchema), async (c) => {
     }
 
     // If requesting ZIP, return a generated zip
-    if (c.req.query("format") === 'zip') {
+    if (c.req.query("format") === "zip") {
       const zipBuffer = await exporter.exportZip();
       // Ensure we pass a compatible ArrayBuffer/Uint8Array to Hono
       // Convert to Node Buffer explicitly so types align across envs
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const buf = Buffer.from(zipBuffer as any)
+      const buf = Buffer.from(zipBuffer as any);
       return c.body(buf, 200, {
-        'Content-Type': 'application/zip',
-        'Content-Disposition': 'attachment; filename="kyto-export.zip"',
+        "Content-Type": "application/zip",
+        "Content-Disposition": 'attachment; filename="kyto-export.zip"',
       });
     }
 
@@ -70,7 +74,7 @@ exportRoutes.post("/", zValidator("json", exportSchema), async (c) => {
     console.error("[Export] Export error", error);
     return c.json(
       { error: "Export failed. Please check your input and try again." },
-      500,
+      500
     );
   }
 });
@@ -85,94 +89,97 @@ const githubSchema = z.object({
   files: z.array(z.object({ path: z.string(), content: z.string() })),
 });
 
-exportRoutes.post('/github', zValidator('json', githubSchema), async (c) => {
+exportRoutes.post("/github", zValidator("json", githubSchema), async (c) => {
   try {
-    const body = c.req.valid('json') as any
-    const { token, owner, repo, branch = 'main', message } = body
-    const files: Array<{ path: string; content: string }> = body.files || []
+    const body = c.req.valid("json") as any;
+    const { token, owner, repo, branch = "main", message } = body;
+    const files: Array<{ path: string; content: string }> = body.files || [];
 
     if (!token || !owner || !repo || files.length === 0) {
-      return c.json({ error: 'Missing parameters or no files to commit' }, 400)
+      return c.json({ error: "Missing parameters or no files to commit" }, 400);
     }
 
     const headers = {
       Authorization: `token ${token}`,
-      Accept: 'application/vnd.github+json',
-      'Content-Type': 'application/json',
-    }
+      Accept: "application/vnd.github+json",
+      "Content-Type": "application/json",
+    };
 
     // Verify token by fetching user
-    const userResp = await fetch('https://api.github.com/user', { headers })
+    const userResp = await fetch("https://api.github.com/user", { headers });
     if (!userResp.ok) {
-      const text = await userResp.text()
-      return c.json({ error: `Invalid token: ${text}` }, 401)
+      const text = await userResp.text();
+      return c.json({ error: `Invalid token: ${text}` }, 401);
     }
 
     // Ensure repo exists (and is accessible)
-    const repoUrl = `https://api.github.com/repos/${owner}/${repo}`
-    let repoResp = await fetch(repoUrl, { headers })
+    const repoUrl = `https://api.github.com/repos/${owner}/${repo}`;
+    let repoResp = await fetch(repoUrl, { headers });
 
     if (repoResp.status === 404) {
       // Try to create repository under authenticated user (owner must match)
-      const createResp = await fetch('https://api.github.com/user/repos', {
-        method: 'POST',
+      const createResp = await fetch("https://api.github.com/user/repos", {
+        method: "POST",
         headers,
         body: JSON.stringify({ name: repo, private: false }),
-      })
+      });
 
       if (!createResp.ok) {
-        const text = await createResp.text()
-        return c.json({ error: `Failed to create repo: ${text}` }, 400)
+        const text = await createResp.text();
+        return c.json({ error: `Failed to create repo: ${text}` }, 400);
       }
     } else if (!repoResp.ok) {
-      const text = await repoResp.text()
-      return c.json({ error: `Failed to access repo: ${text}` }, 400)
+      const text = await repoResp.text();
+      return c.json({ error: `Failed to access repo: ${text}` }, 400);
     }
 
     // For each file, create or update via the GitHub contents API
-    const results: Array<{ path: string; status: string; detail?: string }> = []
+    const results: Array<{ path: string; status: string; detail?: string }> =
+      [];
 
     for (const f of files) {
       try {
-        const url = `https://api.github.com/repos/${owner}/${repo}/contents/${encodeURIComponent(f.path)}`
-        const getResp = await fetch(url, { headers })
-        let sha: string | undefined
+        const url = `https://api.github.com/repos/${owner}/${repo}/contents/${encodeURIComponent(
+          f.path
+        )}`;
+        const getResp = await fetch(url, { headers });
+        let sha: string | undefined;
         if (getResp.ok) {
-          const json = await getResp.json()
-          sha = json.sha
+          const json = (await getResp.json()) as any;
+          sha = json.sha;
         }
 
         const payload: any = {
           message: message || `Add ${f.path} via Kyto export`,
-          content: Buffer.from(f.content, 'utf-8').toString('base64'),
+          content: Buffer.from(f.content, "utf-8").toString("base64"),
           branch,
-        }
+        };
 
-        if (sha) payload.sha = sha
+        if (sha) payload.sha = sha;
 
         const putResp = await fetch(url, {
-          method: 'PUT',
+          method: "PUT",
           headers,
           body: JSON.stringify(payload),
-        })
+        });
 
         if (!putResp.ok) {
-          const text = await putResp.text()
-          results.push({ path: f.path, status: 'error', detail: text })
+          const text = await putResp.text();
+          results.push({ path: f.path, status: "error", detail: text });
         } else {
-          results.push({ path: f.path, status: 'ok' })
+          results.push({ path: f.path, status: "ok" });
         }
       } catch (err: any) {
-        results.push({ path: f.path, status: 'error', detail: String(err) })
+        results.push({ path: f.path, status: "error", detail: String(err) });
       }
     }
 
-    return c.json({ success: true, results })
+    return c.json({ success: true, results });
   } catch (err: any) {
-    console.error('[Export:GitHub] error', err)
-    return c.json({ error: String(err) }, 500)
+    console.error("[Export:GitHub] error", err);
+    return c.json({ error: String(err) }, 500);
   }
-})
+});
 
 export class BotExporter {
   private data: ExportRequest;
@@ -232,7 +239,7 @@ export class BotExporter {
             },
           },
           null,
-          2,
+          2
         ),
       });
     } else {
@@ -263,25 +270,28 @@ export class BotExporter {
     const issues: string[] = [];
 
     // Quick JS syntax check using acorn
-    if (this.isJs && file.path.endsWith('.js')) {
+    if (this.isJs && file.path.endsWith(".js")) {
       try {
         // Use dynamic import to avoid adding a top-level import if not present in environment
         // eslint-disable-next-line @typescript-eslint/no-var-requires
-        const acorn = require('acorn');
-        acorn.parse(file.content, { ecmaVersion: 'latest' });
+        const acorn = require("acorn");
+        acorn.parse(file.content, { ecmaVersion: "latest" });
       } catch (err: any) {
         issues.push(`JavaScript parse error: ${err.message}`);
       }
     }
 
     // Simple Python heuristic check: unbalanced parentheses/brackets
-    if (!this.isJs && file.path.endsWith('.py')) {
-      const open = (s: string, ch: string) => (s.match(new RegExp(`\\${ch}`, 'g')) || []).length
-      const opens = open(file.content, '(') - open(file.content, ')')
-      const opensB = open(file.content, '[') - open(file.content, ']')
-      const opensC = open(file.content, '{') - open(file.content, '}')
+    if (!this.isJs && file.path.endsWith(".py")) {
+      const open = (s: string, ch: string) =>
+        (s.match(new RegExp(`\\${ch}`, "g")) || []).length;
+      const opens = open(file.content, "(") - open(file.content, ")");
+      const opensB = open(file.content, "[") - open(file.content, "]");
+      const opensC = open(file.content, "{") - open(file.content, "}");
       if (opens !== 0 || opensB !== 0 || opensC !== 0) {
-        issues.push('Potential unbalanced brackets or parentheses in Python file');
+        issues.push(
+          "Potential unbalanced brackets or parentheses in Python file"
+        );
       }
     }
 
@@ -294,7 +304,7 @@ export class BotExporter {
   async exportZip(): Promise<Uint8Array> {
     // Use JSZip to create a zip archive in memory
     // eslint-disable-next-line @typescript-eslint/no-var-requires
-    const JSZip = require('jszip');
+    const JSZip = require("jszip");
     const zip = new JSZip();
     const result = this.export();
 
@@ -302,7 +312,7 @@ export class BotExporter {
       zip.file(f.path, f.content);
     }
 
-    const content = await zip.generateAsync({ type: 'uint8array' });
+    const content = await zip.generateAsync({ type: "uint8array" });
     return content;
   }
 
@@ -335,7 +345,9 @@ const client = new Client({
   ]
 });
 
-${hasCommands ? `// Load commands
+${
+  hasCommands
+    ? `// Load commands
 client.commands = new Collection();
 const commandFiles = fs.readdirSync(path.join(__dirname, 'commands')).filter(f => f.endsWith('.js'));
 
@@ -343,9 +355,13 @@ for (const file of commandFiles) {
   const command = require(\`./commands/\${file}\`);
   client.commands.set(command.data.name, command);
   console.log(\`[Commands] Loaded \${command.data.name}\`);
-}` : ''}
+}`
+    : ""
+}
 
-${hasEvents ? `// Load events
+${
+  hasEvents
+    ? `// Load events
 const eventFiles = fs.readdirSync(path.join(__dirname, 'events')).filter(f => f.endsWith('.js'));
 
 for (const file of eventFiles) {
@@ -356,7 +372,9 @@ for (const file of eventFiles) {
     client.on(event.name, (...args) => event.execute(...args, client));
   }
   console.log(\`[Events] Loaded \${event.name}\`);
-}` : ''}
+}`
+    : ""
+}
 
 // Ready event
 client.once('ready', () => {
@@ -364,7 +382,9 @@ client.once('ready', () => {
   console.log(\`📊 Serving \${client.guilds.cache.size} servers\`);
 });
 
-${hasCommands ? `// Handle slash commands
+${
+  hasCommands
+    ? `// Handle slash commands
 client.on('interactionCreate', async (interaction) => {
   if (!interaction.isChatInputCommand()) return;
 
@@ -382,7 +402,9 @@ client.on('interactionCreate', async (interaction) => {
       await interaction.reply(reply);
     }
   }
-});` : ''}
+});`
+    : ""
+}
 
 // Login
 client.login(process.env.BOT_TOKEN);
@@ -415,7 +437,9 @@ class Bot(commands.Bot):
     
     async def setup_hook(self):
         """Load commands and sync slash commands"""
-        ${hasCommands ? `# Load command cogs
+        ${
+          hasCommands
+            ? `# Load command cogs
         for filename in os.listdir('./commands'):
             if filename.endswith('.py'):
                 await self.load_extension(f'commands.{filename[:-3]}')
@@ -423,7 +447,9 @@ class Bot(commands.Bot):
         
         # Sync slash commands
         await self.tree.sync()
-        print('[Commands] Synced slash commands')` : '# No commands to load'}
+        print('[Commands] Synced slash commands')`
+            : "# No commands to load"
+        }
     
     async def on_ready(self):
         print(f'✅ Logged in as {self.user}')
@@ -431,7 +457,7 @@ class Bot(commands.Bot):
 
 bot = Bot()
 
-${hasEvents ? this.generatePyEvents(events) : ''}
+${hasEvents ? this.generatePyEvents(events) : ""}
 
 # Run bot
 bot.run(os.getenv('BOT_TOKEN'))
@@ -443,7 +469,7 @@ bot.run(os.getenv('BOT_TOKEN'))
     if (commands.length === 0) return [];
 
     const files = [];
-    
+
     // Create commands directory structure
     if (this.isJs) {
       for (const cmd of commands) {
@@ -556,11 +582,11 @@ ${this.generateActionCode(actions, true, 6)}
 
   private generatePyEvents(events: Block[]): string {
     let code = "";
-    
+
     for (const evt of events) {
       const eventType = this.getEventType(evt);
       const actions = this.getConnectedBlocks(evt.id);
-      
+
       code += `
 @bot.event
 async def ${eventType}(...args):
@@ -570,13 +596,22 @@ ${this.generateActionCode(actions, false, 8)}
         print(f'[${eventType}] Error: {error}')
 `;
     }
-    
+
     return code;
   }
 
-  private generateActionCode(blocks: Block[], isJs: boolean, indent: number): string {
+  private generateActionCode(
+    blocks: Block[],
+    isJs: boolean,
+    indent: number
+  ): string {
     if (blocks.length === 0) {
-      return " ".repeat(indent) + (isJs ? "await interaction.reply('Hello!');" : "await interaction.response.send_message('Hello!')");
+      return (
+        " ".repeat(indent) +
+        (isJs
+          ? "await interaction.reply('Hello!');"
+          : "await interaction.response.send_message('Hello!')")
+      );
     }
 
     let code = "";
@@ -596,73 +631,120 @@ ${this.generateActionCode(actions, false, 8)}
       }
     }
 
-    return code || indentStr + (isJs ? "// No actions defined" : "# No actions defined");
+    return (
+      code ||
+      indentStr + (isJs ? "// No actions defined" : "# No actions defined")
+    );
   }
 
-  private generateActionBlock(block: Block, isJs: boolean, indent: number): string {
+  private generateActionBlock(
+    block: Block,
+    isJs: boolean,
+    indent: number
+  ): string {
     const indentStr = " ".repeat(indent);
     const props = block.data.properties;
 
     if (block.type === "action_reply") {
       const message = props.message || "Hello!";
       const ephemeral = props.ephemeral ? "true" : "false";
-      
+
       if (isJs) {
-        return `${indentStr}await interaction.reply({ content: '${this.escapeString(message)}', ephemeral: ${ephemeral} });\n`;
+        return `${indentStr}await interaction.reply({ content: '${this.escapeString(
+          message
+        )}', ephemeral: ${ephemeral} });\n`;
       } else {
-        return `${indentStr}await interaction.response.send_message('${this.escapeString(message)}', ephemeral=${ephemeral === "true" ? "True" : "False"})\n`;
+        return `${indentStr}await interaction.response.send_message('${this.escapeString(
+          message
+        )}', ephemeral=${ephemeral === "true" ? "True" : "False"})\n`;
       }
     }
 
     if (block.type === "send_message") {
       const message = props.message || "Message";
       const channelId = props.channel_id;
-      
+
       if (isJs) {
-        return `${indentStr}const channel = client.channels.cache.get('${channelId}');\n${indentStr}if (channel) await channel.send('${this.escapeString(message)}');\n`;
+        return `${indentStr}const channel = client.channels.cache.get('${channelId}');\n${indentStr}if (channel) await channel.send('${this.escapeString(
+          message
+        )}');\n`;
       } else {
-        return `${indentStr}channel = bot.get_channel(${channelId})\n${indentStr}if channel:\n${indentStr}    await channel.send('${this.escapeString(message)}')\n`;
+        return `${indentStr}channel = bot.get_channel(${channelId})\n${indentStr}if channel:\n${indentStr}    await channel.send('${this.escapeString(
+          message
+        )}')\n`;
       }
     }
 
     return "";
   }
 
-  private generateModerationBlock(block: Block, isJs: boolean, indent: number): string {
+  private generateModerationBlock(
+    block: Block,
+    isJs: boolean,
+    indent: number
+  ): string {
     const indentStr = " ".repeat(indent);
     const props = block.data.properties;
 
     if (block.type === "mod_kick") {
       if (isJs) {
-        return `${indentStr}const member = interaction.options.getMember('user');\n${indentStr}if (member) await member.kick('${props.reason || "No reason"}');\n`;
+        return `${indentStr}const member = interaction.options.getMember('user');\n${indentStr}if (member) await member.kick('${
+          props.reason || "No reason"
+        }');\n`;
       } else {
-        return `${indentStr}member = interaction.namespace.user\n${indentStr}if member:\n${indentStr}    await member.kick(reason='${props.reason || "No reason"}')\n`;
+        return `${indentStr}member = interaction.namespace.user\n${indentStr}if member:\n${indentStr}    await member.kick(reason='${
+          props.reason || "No reason"
+        }')\n`;
       }
     }
 
     if (block.type === "mod_ban") {
       if (isJs) {
-        return `${indentStr}const member = interaction.options.getMember('user');\n${indentStr}if (member) await member.ban({ reason: '${props.reason || "No reason"}' });\n`;
+        return `${indentStr}const member = interaction.options.getMember('user');\n${indentStr}if (member) await member.ban({ reason: '${
+          props.reason || "No reason"
+        }' });\n`;
       } else {
-        return `${indentStr}member = interaction.namespace.user\n${indentStr}if member:\n${indentStr}    await member.ban(reason='${props.reason || "No reason"}')\n`;
+        return `${indentStr}member = interaction.namespace.user\n${indentStr}if member:\n${indentStr}    await member.ban(reason='${
+          props.reason || "No reason"
+        }')\n`;
       }
     }
 
     return "";
   }
 
-  private generateLogicBlock(block: Block, isJs: boolean, indent: number): string {
+  private generateLogicBlock(
+    block: Block,
+    isJs: boolean,
+    indent: number
+  ): string {
     const indentStr = " ".repeat(indent);
-    
+
     if (block.type === "if_condition") {
       const condition = block.data.properties.condition || "true";
       const thenBlocks = this.getConnectedBlocks(block.id, "then");
       const elseBlocks = this.getConnectedBlocks(block.id, "else");
 
       if (isJs) {
-        return `${indentStr}if (${condition}) {\n${this.generateActionCode(thenBlocks, true, indent + 2)}${indentStr}} else {\n${this.generateActionCode(elseBlocks, true, indent + 2)}${indentStr}}\n`;
+        return `${indentStr}if (${condition}) {\n${this.generateActionCode(
+          thenBlocks,
+          true,
+          indent + 2
+        )}${indentStr}} else {\n${this.generateActionCode(
+          elseBlocks,
+          true,
+          indent + 2
+        )}${indentStr}}\n`;
       } else {
-        return `${indentStr}if ${condition}:\n${this.generateActionCode(thenBlocks, false, indent + 4)}${indentStr}else:\n${this.generateActionCode(elseBlocks, false, indent + 4)}\n`;
+        return `${indentStr}if ${condition}:\n${this.generateActionCode(
+          thenBlocks,
+          false,
+          indent + 4
+        )}${indentStr}else:\n${this.generateActionCode(
+          elseBlocks,
+          false,
+          indent + 4
+        )}\n`;
       }
     }
 
@@ -674,7 +756,7 @@ ${this.generateActionCode(actions, false, 8)}
     return `# Discord Bot Configuration
 BOT_TOKEN=${botToken}
 CLIENT_ID=${clientId}
-${prefix ? `PREFIX=${prefix}` : ''}
+${prefix ? `PREFIX=${prefix}` : ""}
 
 # Generated by Kyto
 # DO NOT COMMIT THIS FILE TO VERSION CONTROL
@@ -684,12 +766,20 @@ ${prefix ? `PREFIX=${prefix}` : ''}
   private generateReadme(): string {
     return `# Discord Bot - Generated by Kyto
 
-This bot was automatically generated from a visual canvas using [Kyto](https://kyto.app).
+This bot was automatically generated from a visual canvas using [Kyto](https://kyto.dev).
 
 ## Features
 
-${this.getBlocksByType("command_slash").length > 0 ? `- ✅ Slash Commands (${this.getBlocksByType("command_slash").length})` : ''}
-${this.getBlocksByType("event_").length > 0 ? `- ✅ Event Listeners (${this.getBlocksByType("event_").length})` : ''}
+${
+  this.getBlocksByType("command_slash").length > 0
+    ? `- ✅ Slash Commands (${this.getBlocksByType("command_slash").length})`
+    : ""
+}
+${
+  this.getBlocksByType("event_").length > 0
+    ? `- ✅ Event Listeners (${this.getBlocksByType("event_").length})`
+    : ""
+}
 - ✅ Error Handling
 - ✅ Environment Configuration
 
@@ -697,11 +787,15 @@ ${this.getBlocksByType("event_").length > 0 ? `- ✅ Event Listeners (${this.get
 
 ### 1. Install Dependencies
 
-${this.isJs ? `\`\`\`bash
+${
+  this.isJs
+    ? `\`\`\`bash
 npm install
-\`\`\`` : `\`\`\`bash
+\`\`\``
+    : `\`\`\`bash
 pip install -r requirements.txt
-\`\`\``}
+\`\`\``
+}
 
 ### 2. Configure Environment
 
@@ -714,23 +808,31 @@ CLIENT_ID=your_client_id_here
 
 ### 3. Run the Bot
 
-${this.isJs ? `\`\`\`bash
+${
+  this.isJs
+    ? `\`\`\`bash
 npm start
-\`\`\`` : `\`\`\`bash
+\`\`\``
+    : `\`\`\`bash
 python main.py
-\`\`\``}
+\`\`\``
+}
 
 ## Project Structure
 
 \`\`\`
-${this.isJs ? `├── index.js           # Main bot file
+${
+  this.isJs
+    ? `├── index.js           # Main bot file
 ├── commands/          # Slash command handlers
 ├── events/            # Event listeners
 ├── package.json       # Dependencies
-└── .env              # Configuration` : `├── main.py            # Main bot file
+└── .env              # Configuration`
+    : `├── main.py            # Main bot file
 ├── commands/          # Command cogs
 ├── requirements.txt   # Dependencies
-└── .env              # Configuration`}
+└── .env              # Configuration`
+}
 \`\`\`
 
 ## Deployment
@@ -743,7 +845,9 @@ Deploy to your favorite platform:
 
 ## Need Help?
 
-- [Discord.${this.isJs ? "js" : "py"} Documentation](https://${this.isJs ? "discord.js.org" : "discordpy.readthedocs.io"})
+- [Discord.${this.isJs ? "js" : "py"} Documentation](https://${
+      this.isJs ? "discord.js.org" : "discordpy.readthedocs.io"
+    })
 - [Kyto Documentation](https://docs.kyto.app)
 
 ---
@@ -762,7 +866,11 @@ Deploy to your favorite platform:
    Add your bot token to the .env file
 
 3. **Register Slash Commands** (Discord.js only)
-   ${this.isJs ? "Run: node deploy-commands.js (if provided)" : "Commands auto-sync on startup"}
+   ${
+     this.isJs
+       ? "Run: node deploy-commands.js (if provided)"
+       : "Commands auto-sync on startup"
+   }
 
 4. **Start the Bot**
    ${this.isJs ? "Run: npm start" : "Run: python main.py"}
@@ -782,42 +890,49 @@ Generated by Kyto - Visual Automation Studio
   // ============== HELPER METHODS ==============
 
   private getBlocksByType(typePrefix: string): Block[] {
-    return this.blocks.filter(b => b.type.startsWith(typePrefix));
+    return this.blocks.filter((b) => b.type.startsWith(typePrefix));
   }
 
   private getConnectedBlocks(blockId: string, handle?: string): Block[] {
-    const connections = this.connections.filter(c => 
-      c.source === blockId && (!handle || c.sourceHandle === handle)
+    const connections = this.connections.filter(
+      (c) => c.source === blockId && (!handle || c.sourceHandle === handle)
     );
-    
+
     return connections
-      .map(c => this.blocks.find(b => b.id === c.target))
-      .filter(b => b !== undefined) as Block[];
+      .map((c) => this.blocks.find((b) => b.id === c.target))
+      .filter((b) => b !== undefined) as Block[];
   }
 
   private getCommandName(block: Block): string {
-    return (block.data.properties.name || "command").toLowerCase().replace(/\s+/g, "-");
+    return (block.data.properties.name || "command")
+      .toLowerCase()
+      .replace(/\s+/g, "-");
   }
 
   private getEventType(block: Block): string {
     const type = block.type.replace("event_", "");
     const mappings: Record<string, string> = {
-      "member_join": "guildMemberAdd",
-      "member_leave": "guildMemberRemove",
-      "message": "messageCreate",
-      "ready": "ready",
+      member_join: "guildMemberAdd",
+      member_leave: "guildMemberRemove",
+      message: "messageCreate",
+      ready: "ready",
     };
     return mappings[type] || type;
   }
 
   // Use event type to create a safe filename for event files
   private getEventName(block: Block): string {
-    const type = this.getEventType(block)
-    return String(type).toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-_]/gi, '')
+    const type = this.getEventType(block);
+    return String(type)
+      .toLowerCase()
+      .replace(/\s+/g, "-")
+      .replace(/[^a-z0-9-_]/gi, "");
   }
 
   private toPascalCase(str: string): string {
-    return str.replace(/(^\w|-\w)/g, match => match.replace("-", "").toUpperCase());
+    return str.replace(/(^\w|-\w)/g, (match) =>
+      match.replace("-", "").toUpperCase()
+    );
   }
 
   private escapeString(str: string): string {

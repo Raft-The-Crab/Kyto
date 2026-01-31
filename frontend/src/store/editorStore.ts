@@ -10,7 +10,11 @@ interface EditorState extends CanvasState {
   canRedo: boolean
 
   // Actions
-  addBlock: (type: BlockType, position: { x: number; y: number }) => void
+  addBlock: (
+    type: BlockType,
+    position: { x: number; y: number },
+    initialProperties?: Record<string, unknown>
+  ) => void
   removeBlock: (id: string) => void
   updateBlock: (id: string, updates: Partial<CanvasBlock>) => void
   selectBlock: (id: string | null) => void
@@ -23,6 +27,7 @@ interface EditorState extends CanvasState {
   // Helpers
   getBlockById: (id: string) => CanvasBlock | undefined
   clearCanvas: () => void
+  initializeFromData: (data: CanvasState) => void
   duplicateBlock: (id: string) => void
   undo: () => void
   redo: () => void
@@ -59,7 +64,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
     })
   },
 
-  addBlock: (type, position) => {
+  addBlock: (type, position, initialProperties) => {
     const definition = BLOCK_DEFINITIONS[type]
     if (!definition) return
 
@@ -81,7 +86,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
         type,
         label: definition.label,
         category: definition.category,
-        properties: defaultProperties,
+        properties: { ...defaultProperties, ...initialProperties },
         isValid: true,
         errors: [],
         warnings: [],
@@ -181,6 +186,15 @@ export const useEditorStore = create<EditorState>((set, get) => ({
       connections: newState.connections || [],
       selectedBlockId: newState.selectedBlockId || null,
       viewportPosition: newState.viewportPosition || { x: 0, y: 0, zoom: 1 },
+    })
+  },
+
+  initializeFromData: data => {
+    set({
+      blocks: data.blocks || [],
+      connections: data.connections || [],
+      selectedBlockId: data.selectedBlockId || null,
+      viewportPosition: data.viewportPosition || { x: 0, y: 0, zoom: 1 },
     })
   },
 

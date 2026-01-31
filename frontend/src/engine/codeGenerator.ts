@@ -24,11 +24,31 @@ const generateActionCode = (
       case 'condition_has_permission':
         return `    if (interaction.member.permissions.has(PermissionFlagsBits.${props.permission})) {\n${getBranch('true')}\n    } else {\n${getBranch('false')}\n    }\n`
       case 'send_message':
-        return `    await interaction.channel.send({ content: \`${props.content || ''}\`, ephemeral: ${props.ephemeral || false} });\n`
+        if (props.useEmbed) {
+          return `    const embed = new EmbedBuilder()\n      .setTitle(\`${props.embed_title || ''}\`)\n      .setDescription(\`${props.embed_description || ''}\`)\n      .setColor('${props.embed_color || '#3b82f6'}');\n    await interaction.channel.send({ embeds: [embed] });\n`
+        }
+        return `    await interaction.channel.send({ content: \`${props.content || ''}\` });\n`
       case 'action_reply':
+        if (props.useEmbed) {
+          return `    const embed = new EmbedBuilder()\n      .setTitle(\`${props.embed_title || ''}\`)\n      .setDescription(\`${props.embed_description || ''}\`)\n      .setColor('${props.embed_color || '#3b82f6'}');\n    await interaction.reply({ embeds: [embed], ephemeral: ${props.ephemeral || false} });\n`
+        }
         return `    await interaction.reply({ content: \`${props.content || ''}\`, ephemeral: ${props.ephemeral || false} });\n`
-      case 'send_embed':
-        return `    const embed = new EmbedBuilder()\n      .setTitle(\`${props.title || ''}\`)\n      .setDescription(\`${props.description || ''}\`)\n      .setColor('${props.color || '#3b82f6'}');\n    await interaction.reply({ embeds: [embed] });\n`
+      case 'action_defer_reply':
+        return `    await interaction.deferReply({ ephemeral: ${props.ephemeral || false} });\n`
+      case 'edit_reply':
+        return `    await interaction.editReply({ content: \`${props.content || ''}\` });\n`
+      case 'follow_up':
+        return `    await interaction.followUp({ content: \`${props.content || ''}\`, ephemeral: ${props.ephemeral || false} });\n`
+      case 'send_embed': {
+        const title = props.title || props.embed_title || ''
+        const desc = props.description || props.embed_description || ''
+        const color = props.color || props.embed_color || '#3b82f6'
+        return `    const embed = new EmbedBuilder()\n      .setTitle(\`${title}\`)\n      .setDescription(\`${desc}\`)\n      .setColor('${color}');\n    await interaction.reply({ embeds: [embed] });\n`
+      }
+      case 'error_handler':
+        // Error handler doesn't generate code directly, it's used as a boundary marker
+        // The actual try-catch wrapping is handled in the flow generation logic
+        return `    // Error boundary\n`
       case 'wait':
         return `    await new Promise(r => setTimeout(r, ${(props.duration || 1) * 1000}));\n`
       case 'call_module': {
@@ -66,29 +86,47 @@ const generateActionCode = (
         return `    await interaction.guild.roles.create({ name: '${props.name || 'new-role'}', reason: 'System action' });\n`
       case 'channel_create':
         return `    await interaction.guild.channels.create({ name: '${props.name || 'new-channel'}' });\n`
-      case 'string_manipulation':
-        const strOp = props.operation
-        const strInput = props.input
-        if (strOp === 'split')
-          return `    const ${props.saveTo || 'strResult'} = "${strInput}".split(' ');\n`
-        if (strOp === 'join')
-          return `    const ${props.saveTo || 'strResult'} = "${strInput}".join(' ');\n`
-        if (strOp === 'replace')
-          return `    const ${props.saveTo || 'strResult'} = "${strInput}".replace('a', 'b');\n`
-        if (strOp === 'upper')
-          return `    const ${props.saveTo || 'strResult'} = "${strInput}".toUpperCase();\n`
-        if (strOp === 'lower')
-          return `    const ${props.saveTo || 'strResult'} = "${strInput}".toLowerCase();\n`
-        return `    // String Op: ${strOp}\n`
-      case 'math_advanced':
-        const mathOp = props.operation
-        if (mathOp === 'pow') return `    const ${props.saveTo || 'mathResult'} = Math.pow(2, 3);\n`
-        if (mathOp === 'sqrt') return `    const ${props.saveTo || 'mathResult'} = Math.sqrt(16);\n`
-        if (mathOp === 'round')
+      case 'string_manipulation': {
+        const strOpJs = props.operation
+        const strInputJs = props.input
+        if (strOpJs === 'split')
+          return `    const ${props.saveTo || 'strResult'} = "${strInputJs}".split(' ');\n`
+        if (strOpJs === 'join')
+          return `    const ${props.saveTo || 'strResult'} = ["${strInputJs}"].join(' ');\n`
+        if (strOpJs === 'replace')
+          return `    const ${props.saveTo || 'strResult'} = "${strInputJs}".replace('a', 'b');\n`
+        if (strOpJs === 'upper')
+          return `    const ${props.saveTo || 'strResult'} = "${strInputJs}".toUpperCase();\n`
+        if (strOpJs === 'lower')
+          return `    const ${props.saveTo || 'strResult'} = "${strInputJs}".toLowerCase();\n`
+        return `    // String Op: ${strOpJs}\n`
+      }
+      case 'math_advanced': {
+        const mathOpJs = props.operation
+        if (mathOpJs === 'pow')
+          return `    const ${props.saveTo || 'mathResult'} = Math.pow(2, 3);\n`
+        if (mathOpJs === 'sqrt')
+          return `    const ${props.saveTo || 'mathResult'} = Math.sqrt(16);\n`
+        if (mathOpJs === 'round')
           return `    const ${props.saveTo || 'mathResult'} = Math.round(10.5);\n`
-        if (mathOp === 'random_range')
+        if (mathOpJs === 'random_range')
           return `    const ${props.saveTo || 'mathResult'} = Math.floor(Math.random() * 100);\n`
-        return `    // Math Op: ${mathOp}\n`
+        return `    // Math Op: ${mathOpJs}\n`
+      }
+      case 'add_button':
+        return `    const button = new ButtonBuilder()\n      .setCustomId('${props.customId || 'btn_click_1'}')\n      .setLabel('${props.label || 'Click me'}')\n      .setStyle(ButtonStyle.${props.style || 'Primary'});\n    const row = new ActionRowBuilder().addComponents(button);\n    await interaction.reply({ content: \`${props.content || ''}\`, components: [row] });\n`
+      case 'add_select_menu':
+        return `    const select = new StringSelectMenuBuilder()\n      .setCustomId('${props.customId || 'menu_select_1'}')\n      .setPlaceholder('${props.placeholder || 'Select an option...'}');\n    const rowMenu = new ActionRowBuilder().addComponents(select);\n    await interaction.reply({ content: \`${props.content || ''}\`, components: [rowMenu] });\n`
+      case 'show_modal':
+        return `    const modal = new ModalBuilder()\n      .setCustomId('${props.customId || 'modal_submit_1'}')\n      .setTitle('${props.title || 'My Form'}');\n    const input = new TextInputBuilder()\n      .setCustomId('${props.text_input_id || 'name_input'}')\n      .setLabel('${props.text_input_label || 'Your answer'}')\n      .setStyle(TextInputStyle.${props.text_input_style || 'Short'});\n    const modalRow = new ActionRowBuilder().addComponents(input);\n    modal.addComponents(modalRow);\n    await interaction.showModal(modal);\n`
+      case 'edit_message':
+        return `    await interaction.message.edit({ content: \`${props.content || ''}\` });\n`
+      case 'delete_message':
+        return `    await interaction.message.delete();\n`
+      case 'webhook_send':
+        return `    const webhookRes = await fetch('${props.url}', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ content: \`${props.content || ''}\` }) });\n    if (!webhookRes.ok) console.error('Webhook failed', webhookRes.status);\n`
+      case 'console_log':
+        return `    console.log(${props.message ? `\`${props.message}\`` : "'[Log Block]'"});\n`
       default:
         return `    // Block Logic: ${action.type}\n`
     }
@@ -96,34 +134,50 @@ const generateActionCode = (
     // Python (discord.py)
     switch (action.type) {
       case 'send_message':
+        if (props.useEmbed) {
+          return `    embed = discord.Embed(title="${props.embed_title || ''}", description="${props.embed_description || ''}", color=${props.embed_color?.replace('#', '0x') || '0x3b82f6'})\n    await interaction.channel.send(embed=embed)\n`
+        }
         return `    await interaction.channel.send(content="${props.content || ''}")\n`
       case 'action_reply':
+        if (props.useEmbed) {
+          return `    embed = discord.Embed(title="${props.embed_title || ''}", description="${props.embed_description || ''}", color=${props.embed_color?.replace('#', '0x') || '0x3b82f6'})\n    await interaction.response.send_message(embed=embed, ephemeral=${props.ephemeral ? 'True' : 'False'})\n`
+        }
         return `    await interaction.response.send_message("${props.content || ''}", ephemeral=${props.ephemeral ? 'True' : 'False'})\n`
+      case 'action_defer_reply':
+        return `    await interaction.response.defer(ephemeral=${props.ephemeral ? 'True' : 'False'})\n`
+      case 'edit_reply':
+        return `    await interaction.edit_original_response(content="${props.content || ''}")\n`
+      case 'follow_up':
+        return `    await interaction.followup.send("${props.content || ''}", ephemeral=${props.ephemeral ? 'True' : 'False'})\n`
       case 'wait':
         return `    await asyncio.sleep(${props.duration || 1})\n`
       case 'http_request':
         return `    async with aiohttp.ClientSession() as session:\n        async with session.get("${props.url}") as resp:\n            ${props.saveTo || 'apiResult'} = await resp.json()\n`
-      case 'string_manipulation':
-        const strOp = props.operation
-        const strInput = props.input
-        if (strOp === 'split')
-          return `    ${props.saveTo || 'strResult'} = "${strInput}".split(' ')\n`
-        if (strOp === 'join')
-          return `    ${props.saveTo || 'strResult'} = " ".join("${strInput}")\n`
-        if (strOp === 'replace')
-          return `    ${props.saveTo || 'strResult'} = "${strInput}".replace('a', 'b')\n`
-        if (strOp === 'upper') return `    ${props.saveTo || 'strResult'} = "${strInput}".upper()\n`
-        if (strOp === 'lower') return `    ${props.saveTo || 'strResult'} = "${strInput}".lower()\n`
-        return `    # String Op: ${strOp}\n`
-      case 'math_advanced':
-        const mathOp = props.operation
-        if (mathOp === 'pow') return `    ${props.saveTo || 'mathResult'} = pow(2, 3)\n`
-        if (mathOp === 'sqrt')
+      case 'string_manipulation': {
+        const strOpPy = props.operation
+        const strInputPy = props.input
+        if (strOpPy === 'split')
+          return `    ${props.saveTo || 'strResult'} = "${strInputPy}".split(' ')\n`
+        if (strOpPy === 'join')
+          return `    ${props.saveTo || 'strResult'} = " ".join("${strInputPy}")\n`
+        if (strOpPy === 'replace')
+          return `    ${props.saveTo || 'strResult'} = "${strInputPy}".replace('a', 'b')\n`
+        if (strOpPy === 'upper')
+          return `    ${props.saveTo || 'strResult'} = "${strInputPy}".upper()\n`
+        if (strOpPy === 'lower')
+          return `    ${props.saveTo || 'strResult'} = "${strInputPy}".lower()\n`
+        return `    # String Op: ${strOpPy}\n`
+      }
+      case 'math_advanced': {
+        const mathOpPy = props.operation
+        if (mathOpPy === 'pow') return `    ${props.saveTo || 'mathResult'} = pow(2, 3)\n`
+        if (mathOpPy === 'sqrt')
           return `    import math\n    ${props.saveTo || 'mathResult'} = math.sqrt(16)\n`
-        if (mathOp === 'round') return `    ${props.saveTo || 'mathResult'} = round(10.5)\n`
-        if (mathOp === 'random_range')
+        if (mathOpPy === 'round') return `    ${props.saveTo || 'mathResult'} = round(10.5)\n`
+        if (mathOpPy === 'random_range')
           return `    import random\n    ${props.saveTo || 'mathResult'} = random.randint(0, 100)\n`
-        return `    # Math Op: ${mathOp}\n`
+        return `    # Math Op: ${mathOpPy}\n`
+      }
       case 'action_kick':
         return `    user = await interaction.guild.fetch_member(${props.userId})\n    await user.kick(reason="${props.reason || 'None'}")\n`
       case 'action_ban':
@@ -144,6 +198,10 @@ const generateActionCode = (
         return `    await interaction.guild.create_role(name="${props.name || 'new-role'}")\n`
       case 'channel_create':
         return `    await interaction.guild.create_text_channel("${props.name || 'new-channel'}")\n`
+      case 'console_log':
+        return `    print(${props.message ? `"${props.message}"` : "'[Log Block]'"})\n`
+      case 'error_handler':
+        return `    try:\n        ${getBranch('output_0').split('\n').join('\n        ')}\n    except Exception as e:\n        ${props.logToConsole ? "print(f'[Kyto Error]: {e}')" : 'pass'}\n`
       default:
         return `    # Block Logic: ${action.type}\n`
     }
@@ -215,11 +273,11 @@ export const generateCode = (
   let code = ''
 
   if (isJs) {
-    code += `// Generated by Cortex Engine V2\n`
+    code += `// Generated by Kyto Engine V2\n`
     code += `const { Client, GatewayIntentBits, EmbedBuilder, ModalBuilder } = require('discord.js');\n`
     code += `const client = new Client({ intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMessages, GatewayIntentBits.GuildVoiceStates] });\n\n`
   } else {
-    code += `# Generated by Cortex Engine V2\n`
+    code += `# Generated by Kyto Engine V2\n`
     code += `import discord\nimport asyncio\nimport aiohttp\nfrom discord.ext import commands\n\nbot = commands.Bot(command_prefix='!', intents=discord.Intents.all())\n\n`
   }
 
@@ -231,17 +289,52 @@ export const generateCode = (
 
   slashTriggers.forEach(trigger => {
     const props = trigger.data.properties
+    const name = props.name || 'ping'
+
+    // Check for connected subcommands
+    const subcommandConns = connections.filter(c => c.source === trigger.id)
+    const connectedSubcommands = subcommandConns
+      .map(c => blocks.find(b => b.id === c.target))
+      .filter(b => b?.type === 'command_subcommand') as Block[]
+
     if (isJs) {
       code += `client.on('interactionCreate', async (interaction) => {\n`
-      code += `  if (interaction.isChatInputCommand() && interaction.commandName === '${props.name || 'ping'}') {\n`
-      code += generateFlow(trigger.id, blocks, connections, 'js')
+      code += `  if (interaction.isChatInputCommand() && interaction.commandName === '${name}') {\n`
+
+      if (connectedSubcommands.length > 0) {
+        code += `    const subcommand = interaction.options.getSubcommand(false);\n`
+        connectedSubcommands.forEach((sub, i) => {
+          const subName = sub.data.properties.name || `sub${i}`
+          code += `    if (subcommand === '${subName}') {\n`
+          code += generateFlow(sub.id, blocks, connections, 'js')
+          code += `    }\n`
+        })
+      } else {
+        code += generateFlow(trigger.id, blocks, connections, 'js')
+      }
+
       code += `  }\n`
       code += `});\n\n`
     } else {
-      code += `@bot.tree.command(name="${props.name || 'ping'}", description="${props.description || 'Command'}")\n`
-      code += `async def ${props.name || 'cmd'}(interaction: discord.Interaction):\n`
-      code += generateFlow(trigger.id, blocks, connections, 'py')
-      code += `\n`
+      // Python (discord.py)
+      if (connectedSubcommands.length > 0) {
+        code += `@bot.tree.group(name="${name}", description="${props.description || 'Group'}")\n`
+        code += `async def ${name}_group(interaction: discord.Interaction):\n`
+        code += `    pass\n\n`
+
+        connectedSubcommands.forEach((sub, i) => {
+          const subName = sub.data.properties.name || `sub${i}`
+          code += `@${name}_group.command(name="${subName}", description="${sub.data.properties.description || 'Sub'}")\n`
+          code += `async def ${name}_${subName}(interaction: discord.Interaction):\n`
+          code += generateFlow(sub.id, blocks, connections, 'py')
+          code += `\n`
+        })
+      } else {
+        code += `@bot.tree.command(name="${name}", description="${props.description || 'Command'}")\n`
+        code += `async def ${name}_cmd(interaction: discord.Interaction):\n`
+        code += generateFlow(trigger.id, blocks, connections, 'py')
+        code += `\n`
+      }
     }
   })
 

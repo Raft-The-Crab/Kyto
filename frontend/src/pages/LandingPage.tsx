@@ -1,203 +1,206 @@
-import { Link } from 'react-router-dom'
-import {
-  ArrowRight,
-  Zap,
-  Shield,
-  Code2,
-  Cpu,
-  Globe,
-  MessageCircle,
-  Layout,
-  Terminal,
-} from 'lucide-react'
+import { useNavigate } from 'react-router-dom'
+import { ArrowRight, Zap, Code2, Users, Sparkles, Blocks } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
-import { NeoLayout } from '@/components/layout/NeoLayout'
+import { motion } from 'framer-motion'
+import { PublicLayout } from '@/components/layout/PublicLayout'
+import { BuilderPreview } from '@/components/landing/BuilderPreview'
 
 export default function LandingPage() {
+  const navigate = useNavigate()
+
+  const handleGetStarted = () => {
+    navigate('/signup')
+  }
+
+  const handleWatchDemo = () => {
+    navigate('/docs')
+  }
+
+  const features = [
+    {
+      icon: Blocks,
+      title: 'Visual Builder',
+      description: 'Drag and drop blocks to build your bot logic visually',
+    },
+    {
+      icon: Code2,
+      title: 'Code Editor',
+      description: 'Switch to code view for advanced customization',
+    },
+    {
+      icon: Users,
+      title: 'Collaboration',
+      description: 'Work together with your team in real-time',
+    },
+    {
+      icon: Sparkles,
+      title: 'AI Assistant',
+      description: 'Get smart suggestions as you build',
+    },
+  ]
+
+  const stats = [
+    { label: 'Bots Created', value: '10k+' },
+    { label: 'Active Users', value: '5k+' },
+    { label: 'Uptime', value: '99.9%' },
+  ]
+
   return (
-    <NeoLayout>
-      <div className="flex flex-col items-center">
+    <PublicLayout>
+      <div className="relative overflow-hidden">
+        {/* Background Blobs */}
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-[800px] pointer-events-none">
+          <div className="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] bg-primary/10 rounded-full blur-[120px] animate-pulse" />
+          <div className="absolute bottom-[20%] right-[-5%] w-[40%] h-[40%] bg-emerald-500/10 rounded-full blur-[120px] animate-pulse delay-700" />
+        </div>
+
         {/* Hero Section */}
-        <section className="w-full py-24 md:py-32 flex flex-col items-center text-center relative overflow-hidden">
-          {/* Background Gradients */}
-          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-indigo-500/20 rounded-full blur-[120px] -z-10 animate-pulse-slow" />
-          <div className="absolute top-0 right-0 w-[400px] h-[400px] bg-sky-500/10 rounded-full blur-[80px] -z-10" />
+        <section className="relative px-6 pt-20 pb-32">
+          <div className="max-w-7xl mx-auto flex flex-col items-center text-center">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.5 }}
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 border border-primary/20 text-primary mb-8 active:scale-95 transition-all cursor-pointer group"
+            >
+              <Sparkles className="w-4 h-4 fill-current group-hover:rotate-12 transition-transform" />
+              <span className="text-xs font-black uppercase tracking-widest">
+                v2.0 Beta Now Live
+              </span>
+            </motion.div>
 
-          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-indigo-500/30 bg-indigo-500/10 text-indigo-400 text-xs font-bold uppercase tracking-wider mb-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
-            <span className="w-2 h-2 rounded-full bg-indigo-400 animate-pulse" />
-            v2.0.1 Released
-          </div>
+            <motion.h1
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 0.1 }}
+              className="text-6xl md:text-8xl font-black tracking-tighter leading-[0.85] mb-8 text-foreground"
+            >
+              BUILD BOTS <br />
+              <span className="text-primary italic">WITHOUT</span> LIMITS
+            </motion.h1>
 
-          <h1 className="text-5xl md:text-7xl font-black tracking-tighter text-slate-900 dark:text-white mb-6 max-w-4xl animate-in fade-in slide-in-from-bottom-8 duration-700 delay-100">
-            Build Advanced Discord Bots <br />
-            <span className="text-transparent bg-clip-text bg-linear-to-r from-indigo-500 to-sky-500">
-              Without Writing Code
-            </span>
-          </h1>
+            <motion.p
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 0.2 }}
+              className="max-w-2xl text-xl text-muted-foreground font-medium mb-12 leading-relaxed"
+            >
+              The easiest way to build powerful Discord bots. Create, test, and host complex
+              automation with our easy drag-and-drop builder.
+            </motion.p>
 
-          <p className="text-lg md:text-xl text-slate-600 dark:text-slate-400 max-w-2xl mb-10 leading-relaxed animate-in fade-in slide-in-from-bottom-8 duration-700 delay-200">
-            Kyto is the ultimate visual builder for Discord. Create slash commands, event
-            listeners, and complex logic flows using our drag-and-drop node system.
-          </p>
-
-          <div className="flex flex-col sm:flex-row gap-4 w-full justify-center animate-in fade-in slide-in-from-bottom-8 duration-700 delay-300">
-            <Link to="/commands">
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 0.3 }}
+              className="flex flex-col sm:flex-row gap-6"
+            >
               <Button
-                size="lg"
-                className="h-14 px-8 text-lg gap-2 shadow-xl shadow-indigo-500/20 hover:shadow-indigo-500/40 transition-all hover:scale-105"
+                onClick={handleGetStarted}
+                className="h-14 px-10 bg-primary hover:bg-primary/90 text-primary-foreground font-black rounded-2xl shadow-glow active:scale-95 transition-all text-sm uppercase tracking-widest"
               >
-                Start Building Free <ArrowRight className="w-5 h-5" />
+                Start Building Free
+                <ArrowRight className="w-5 h-5 ml-2" />
               </Button>
-            </Link>
-            <Link to="/docs">
               <Button
-                variant="secondary"
-                size="lg"
-                className="h-14 px-8 text-lg gap-2 hover:bg-slate-200 dark:hover:bg-slate-800 transition-all"
+                variant="outline"
+                onClick={handleWatchDemo}
+                className="h-14 px-10 border-border bg-card/50 backdrop-blur-xl hover:bg-card/80 text-foreground font-black rounded-2xl active:scale-95 transition-all text-sm uppercase tracking-widest"
               >
-                Read Documentation
+                Help Center
               </Button>
-            </Link>
+            </motion.div>
           </div>
+        </section>
 
-          {/* Code Preview / Interface Mockup */}
-          <div className="mt-20 relative w-full max-w-5xl rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-100/50 dark:bg-slate-900/50 backdrop-blur-sm shadow-2xl p-2 animate-in fade-in slide-in-from-bottom-12 duration-1000 delay-500">
-            <div className="absolute inset-0 bg-linear-to-tr from-indigo-500/10 to-transparent rounded-2xl" />
-            <div className="rounded-xl overflow-hidden border border-slate-200 dark:border-slate-800 bg-slate-950 shadow-inner">
-              {/* Use the uploaded image purely as UI reference, keeping code based implementation here for responsiveness */}
-              <div className="flex border-b border-slate-800 bg-slate-900/80 p-3 items-center gap-4">
-                <div className="flex gap-2">
-                  <div className="w-3 h-3 rounded-full bg-red-500/20 border border-red-500/50" />
-                  <div className="w-3 h-3 rounded-full bg-yellow-500/20 border border-yellow-500/50" />
-                  <div className="w-3 h-3 rounded-full bg-green-500/20 border border-green-500/50" />
-                </div>
-                <div className="flex-1 text-center text-xs font-mono text-slate-500">
-                  kyto_editor.tsx
-                </div>
-              </div>
-              <div className="h-[400px] md:h-[600px] relative overflow-hidden bg-[url('/grid-pattern.svg')] opacity-90">
-                {/* Mock Nodes */}
-                <div className="absolute top-20 left-20 w-64 bg-[#1a1a1f] border border-indigo-500 rounded-2xl p-4 shadow-lg shadow-indigo-500/10 flex flex-col gap-2">
-                  <div className="flex items-center gap-3 border-b border-white/10 pb-2 mb-2">
-                    <div className="p-1.5 rounded-lg bg-indigo-500/20 text-indigo-400">
-                      <Zap className="w-4 h-4" />
-                    </div>
-                    <span className="font-bold text-white text-xs uppercase">Slash Command</span>
-                  </div>
-                  <div className="space-y-1">
-                    <div className="h-6 bg-white/5 rounded w-full" />
-                    <div className="h-6 bg-white/5 rounded w-2/3" />
-                  </div>
-                </div>
-
-                <div className="absolute top-60 left-80 w-64 bg-[#1a1a1f] border border-white/10 rounded-2xl p-4 shadow-lg flex flex-col gap-2 opacity-80">
-                  <div className="flex items-center gap-3 border-b border-white/10 pb-2 mb-2">
-                    <div className="p-1.5 rounded-lg bg-emerald-500/20 text-emerald-400">
-                      <MessageCircle className="w-4 h-4" />
-                    </div>
-                    <span className="font-bold text-white text-xs uppercase">Send Reply</span>
-                  </div>
-                  <div className="space-y-1">
-                    <div className="h-6 bg-white/5 rounded w-full" />
-                  </div>
-                </div>
-
-                {/* SVG Connection Line */}
-                <svg className="absolute inset-0 w-full h-full pointer-events-none">
-                  <path
-                    d="M 300 130 C 300 200, 380 200, 380 240"
-                    stroke="#6366f1"
-                    strokeWidth="3"
-                    fill="none"
-                    strokeDasharray="5,5"
-                    className="animate-dash"
-                  />
-                </svg>
-              </div>
+        <section className="px-6 pb-40 relative">
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[120%] h-[120%] bg-primary/5 rounded-full blur-[160px] pointer-events-none" />
+          <motion.div
+            initial={{ opacity: 0, y: 40 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8, delay: 0.4 }}
+            className="relative z-10"
+          >
+            <div className="text-center mb-16">
+              <h2 className="text-sm font-black uppercase tracking-[0.4em] text-primary mb-4">
+                THE BUILDER
+              </h2>
+              <p className="text-muted-foreground font-medium uppercase tracking-widest text-xs">
+                Build bots without writing code
+              </p>
             </div>
-          </div>
+            <BuilderPreview />
+          </motion.div>
         </section>
 
         {/* Features Grid */}
-        <section className="w-full py-24 px-4 bg-slate-50/50 dark:bg-slate-900/20 rounded-3xl my-24 border border-slate-200 dark:border-white/5">
-          <div className="text-center mb-16">
-            <h2 className="text-3xl font-black text-slate-900 dark:text-white mb-4">Why Kyto?</h2>
-            <p className="text-slate-500 dark:text-slate-400 max-w-2xl mx-auto">
-              We provide the power of a coding environment with the ease of a visual builder.
-            </p>
-          </div>
+        <section className="py-32 px-6 relative bg-card/20 border-y border-white/5">
+          <div className="max-w-7xl mx-auto">
+            <div className="text-center mb-24">
+              <h2 className="text-4xl md:text-5xl font-black tracking-tighter mb-4 text-foreground text-center">
+                POWERFUL TOOLS MADE SIMPLE
+              </h2>
+              <p className="text-muted-foreground font-medium text-lg">
+                Everything you need to build, scale, and host complex bots.
+              </p>
+            </div>
 
-          <div className="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto">
-            <FeatureCard
-              icon={<Layout className="w-6 h-6 text-pink-500" />}
-              title="Visual Flow Engine"
-              desc="Design complex logic trees visually. Branch, loop, and condition your bot's behavior without syntax errors."
-            />
-            <FeatureCard
-              icon={<Code2 className="w-6 h-6 text-blue-500" />}
-              title="Real Code Generation"
-              desc="Every flow you build compiles to clean, efficient Discord.js or Python code under the hood."
-            />
-            <FeatureCard
-              icon={<Shield className="w-6 h-6 text-emerald-500" />}
-              title="Enterprise Security"
-              desc="Built-in permission handling, rate limiting, and secure token storage keep your bot safe."
-            />
-            <FeatureCard
-              icon={<Cpu className="w-6 h-6 text-purple-500" />}
-              title="Serverless Hosting"
-              desc="Deploy your bot instantly to our cloud infrastructure with zero config."
-            />
-            <FeatureCard
-              icon={<Globe className="w-6 h-6 text-orange-500" />}
-              title="Web Dashboard"
-              desc="Manage servers, view analytics, and update your bot from anywhere."
-            />
-            <FeatureCard
-              icon={<Terminal className="w-6 h-6 text-slate-500" />}
-              title="Developer Mode"
-              desc="Switch to code view to write custom scripts and import npm packages directly."
-            />
+            <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
+              {features.map((feature, index) => (
+                <motion.div
+                  key={index}
+                  whileHover={{ y: -10 }}
+                  className="glass p-10 rounded-[32px] border border-border/50 hover:border-primary/50 transition-all shadow-sm group"
+                >
+                  <div className="w-14 h-14 bg-primary/10 rounded-2xl flex items-center justify-center text-primary mb-8 group-hover:scale-110 transition-transform">
+                    <feature.icon className="w-7 h-7" />
+                  </div>
+                  <h3 className="text-lg font-black uppercase tracking-tight mb-2">
+                    {feature.title}
+                  </h3>
+                  <p className="text-sm text-slate-400 font-medium">{feature.description}</p>
+                </motion.div>
+              ))}
+            </div>
           </div>
         </section>
 
-        {/* Footer */}
-        <footer role="contentinfo" aria-label="Site footer" className="w-full py-12 border-t border-slate-200 dark:border-white/10 flex flex-col md:flex-row justify-between items-center gap-6 text-slate-500 text-sm">
-          <div className="flex items-center gap-2">
-            <div className="w-6 h-6 rounded-lg bg-indigo-500 flex items-center justify-center" aria-hidden="true">
-              <span className="text-white font-bold text-xs">K</span>
-            </div>
-            <span className="font-bold text-slate-900 dark:text-white">Kyto</span>
+        {/* Stats Section */}
+        <section className="py-32 px-6">
+          <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-12">
+            {stats.map((stat, index) => (
+              <div key={index} className="text-center space-y-2">
+                <div className="text-6xl md:text-7xl font-black tracking-tighter text-foreground italic flex justify-center items-end gap-2 leading-none">
+                  {stat.value}
+                </div>
+                <div className="text-xs font-black uppercase tracking-[0.3em] text-muted-foreground">
+                  {stat.label}
+                </div>
+              </div>
+            ))}
           </div>
-          <div className="flex gap-8">
-            <Link to="/tos" className="hover:text-indigo-500 transition-colors" aria-label="Terms of Service">
-              Terms
-            </Link>
-            <Link to="/privacy" className="hover:text-indigo-500 transition-colors" aria-label="Privacy Policy">
-              Privacy
-            </Link>
-            <Link to="/docs" className="hover:text-indigo-500 transition-colors" aria-label="Documentation">
-              Docs
-            </Link>
-            <a href="#" className="hover:text-indigo-500 transition-colors" aria-label="Join us on Discord" rel="noopener noreferrer">
-              Discord
-            </a>
-          </div>
-          <p>© 2026 Kyto. All rights reserved.</p>
-        </footer>
-      </div>
-    </NeoLayout>
-  )
-}
+        </section>
 
-function FeatureCard({ icon, title, desc }: { icon: any; title: string; desc: string }) {
-  return (
-    <div className="p-6 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/5 hover:border-indigo-500 transition-all hover:shadow-xl hover:-translate-y-1 group">
-      <div className="w-12 h-12 rounded-xl bg-slate-100 dark:bg-white/5 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
-        {icon}
+        {/* CTA Section */}
+        <section className="py-40 px-6 relative overflow-hidden">
+          <div className="max-w-5xl mx-auto glass p-16 md:p-32 rounded-[64px] border border-primary/20 bg-primary/5 text-center relative overflow-hidden">
+            <div className="absolute top-0 right-0 w-96 h-96 bg-primary/20 rounded-full blur-[120px] -mr-48 -mt-48" />
+            <div className="relative z-10">
+              <h2 className="text-5xl md:text-7xl font-black tracking-tighter mb-10 leading-[0.85]">
+                START <br />
+                <span className="text-primary italic">BUILDING</span>
+              </h2>
+              <Button
+                onClick={handleGetStarted}
+                className="h-16 px-12 bg-primary hover:bg-primary/90 text-primary-foreground font-black rounded-3xl shadow-glow active:scale-95 transition-all text-sm uppercase tracking-widest"
+              >
+                Get Started Now
+                <Zap className="w-5 h-5 ml-3 fill-current" />
+              </Button>
+            </div>
+          </div>
+        </section>
       </div>
-      <h3 className="font-bold text-lg text-slate-900 dark:text-white mb-2">{title}</h3>
-      <p className="text-slate-500 dark:text-slate-400 leading-relaxed">{desc}</p>
-    </div>
+    </PublicLayout>
   )
 }

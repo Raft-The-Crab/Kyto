@@ -12,7 +12,7 @@ export function BuilderTabs() {
   ]
 
   return (
-    <div className="flex items-center gap-2 mb-8 border-b border-slate-200 dark:border-slate-800 pb-0">
+    <div className="flex items-center gap-1 p-1 bg-white/5 backdrop-blur-md rounded-xl w-fit mb-10 border border-white/5">
       {tabs.map(tab => {
         const isActive = location.pathname.startsWith(tab.path)
         const Icon = tab.icon
@@ -22,14 +22,14 @@ export function BuilderTabs() {
             key={tab.path}
             to={tab.path}
             className={cn(
-              'px-4 py-3 flex items-center gap-2 font-bold text-sm border-b-2 transition-all',
+              'px-6 py-2 flex items-center gap-2.5 rounded-lg transition-all duration-300 text-xs font-bold uppercase tracking-widest',
               isActive
-                ? 'border-indigo-600 text-indigo-600 dark:text-indigo-400'
-                : 'border-transparent text-slate-500 hover:text-slate-900 dark:hover:text-slate-300 hover:border-slate-300'
+                ? 'bg-white/10 text-emerald-400 shadow-sm border border-white/10'
+                : 'text-slate-500 hover:text-white hover:bg-white/5'
             )}
           >
-            <Icon className="w-4 h-4" />
-            {tab.label}
+            <Icon className={cn('w-4 h-4', isActive ? 'text-emerald-400' : 'text-slate-500')} />
+            <span>{tab.label}</span>
           </Link>
         )
       })}

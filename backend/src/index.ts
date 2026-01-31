@@ -5,6 +5,7 @@ import { projectRoutes } from "./api/projects.js";
 import { exportRoutes } from "./api/export.js";
 import { aiRoutes } from "./api/ai.js";
 import { autoGenRoutes } from "./api/autoGen.js";
+import { analyticsRoutes } from "./api/analytics.js";
 import { setupCollabWebSocket } from "./collab/room.js";
 
 const app = new Hono();
@@ -16,11 +17,11 @@ app.use(
     origin: [
       "http://localhost:3000",
       "http://localhost:5173",
-      "https://kyto.app",
+      "https://kyto.dev",
       "https://kyto.pages.dev",
     ],
     credentials: true,
-  }),
+  })
 );
 
 // Health check
@@ -28,10 +29,10 @@ app.get("/", (c) =>
   c.json({
     status: "ok",
     service: "Kyto Backend",
-    version: "1.0.0",
+    version: "2.0.3",
     ai: "Rule-based + SLM",
     features: ["projects", "ai", "export", "collaboration", "auto-generate"],
-  }),
+  })
 );
 
 // API Routes
@@ -39,6 +40,7 @@ app.route("/api/projects", projectRoutes);
 app.route("/api/export", exportRoutes);
 app.route("/api/ai", aiRoutes);
 app.route("/api/ai", autoGenRoutes);
+app.route("/api/analytics", analyticsRoutes);
 
 // Server setup with WebSocket support
 const port = Number(process.env.PORT) || 8787;
@@ -54,4 +56,3 @@ if (process.env.NODE_ENV === "production") {
 }
 
 export default app;
-

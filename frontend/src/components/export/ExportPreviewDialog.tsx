@@ -1,6 +1,12 @@
 import { useEffect, useState, useCallback } from 'react'
 import Editor from '@monaco-editor/react'
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/Dialog'
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from '@/components/ui/Dialog'
 import { Button } from '@/components/ui/Button'
 import { Copy, Download } from 'lucide-react'
 import { toast } from 'sonner'
@@ -20,15 +26,22 @@ function getLanguageFromPath(path: string) {
   return 'plaintext'
 }
 
-export function ExportPreviewDialog({ open, onClose, files, onDownloadZip }: ExportPreviewDialogProps) {
+export function ExportPreviewDialog({
+  open,
+  onClose,
+  files,
+  onDownloadZip,
+}: ExportPreviewDialogProps) {
   const [active, setActive] = useState<string | null>(files[0]?.path ?? null)
-  const [editorTheme, setEditorTheme] = useState<string>(() => (localStorage.getItem('kyto_monaco_theme') || 'vs-dark'))
+  const [editorTheme, setEditorTheme] = useState<string>(
+    () => localStorage.getItem('kyto_monaco_theme') || 'vs-dark'
+  )
 
   useEffect(() => {
     if (files.length > 0) setActive(files[0]?.path ?? null)
   }, [files])
 
-  const current = files.find((f) => f.path === active) ?? null
+  const current = files.find(f => f.path === active) ?? null
 
   const onCopy = useCallback(async () => {
     if (!current) return
@@ -56,7 +69,9 @@ export function ExportPreviewDialog({ open, onClose, files, onDownloadZip }: Exp
   const toggleTheme = useCallback(() => {
     const next = editorTheme === 'vs-dark' ? 'light' : 'vs-dark'
     setEditorTheme(next)
-    try { localStorage.setItem('kyto_monaco_theme', next) } catch (e) {}
+    try {
+      localStorage.setItem('kyto_monaco_theme', next)
+    } catch (e) {}
   }, [editorTheme])
 
   return (
@@ -66,21 +81,43 @@ export function ExportPreviewDialog({ open, onClose, files, onDownloadZip }: Exp
           <div className="flex items-start justify-between gap-4 w-full">
             <div>
               <DialogTitle>Export Preview</DialogTitle>
-              <DialogDescription>Preview generated files and quick validation issues</DialogDescription>
+              <DialogDescription>
+                Preview generated files and quick validation issues
+              </DialogDescription>
             </div>
 
             <div className="flex items-center gap-2">
-              <Button type="button" onClick={onCopy} variant="outline" aria-label="Copy file to clipboard">
+              <Button
+                type="button"
+                onClick={onCopy}
+                variant="outline"
+                aria-label="Copy file to clipboard"
+              >
                 <Copy className="w-4 h-4 mr-2" /> Copy
               </Button>
-              <Button type="button" onClick={onDownload} variant="outline" aria-label="Download file">
+              <Button
+                type="button"
+                onClick={onDownload}
+                variant="outline"
+                aria-label="Download file"
+              >
                 <Download className="w-4 h-4 mr-2" /> Download
               </Button>
-              <Button type="button" onClick={toggleTheme} variant="outline" aria-label="Toggle editor theme">
+              <Button
+                type="button"
+                onClick={toggleTheme}
+                variant="outline"
+                aria-label="Toggle editor theme"
+              >
                 {editorTheme === 'vs-dark' ? 'Dark' : 'Light'}
               </Button>
               {onDownloadZip && (
-                <Button type="button" onClick={onDownloadZip} variant="neo" aria-label="Download all files as ZIP">
+                <Button
+                  type="button"
+                  onClick={onDownloadZip}
+                  variant="premium"
+                  aria-label="Download all files as ZIP"
+                >
                   <Download className="w-4 h-4 mr-2" /> Download ZIP
                 </Button>
               )}
@@ -90,7 +127,7 @@ export function ExportPreviewDialog({ open, onClose, files, onDownloadZip }: Exp
 
         <div className="flex gap-4">
           <div className="w-1/3 bg-muted/10 p-4 rounded-lg border-2 border-black overflow-auto max-h-[60vh]">
-            {files.map((f) => (
+            {files.map(f => (
               <button
                 key={f.path}
                 onClick={() => setActive(f.path)}
@@ -112,7 +149,9 @@ export function ExportPreviewDialog({ open, onClose, files, onDownloadZip }: Exp
                     {current.issues && current.issues.length > 0 && (
                       <div className="mt-2 space-y-1">
                         {current.issues.map((i, idx) => (
-                          <div key={idx} className="text-xs text-yellow-400 font-bold">⚠ {i}</div>
+                          <div key={idx} className="text-xs text-yellow-400 font-bold">
+                            ⚠ {i}
+                          </div>
                         ))}
                       </div>
                     )}
@@ -134,7 +173,9 @@ export function ExportPreviewDialog({ open, onClose, files, onDownloadZip }: Exp
         </div>
 
         <div className="mt-4 flex justify-end gap-2">
-          <Button onClick={onClose} variant="outline">Close</Button>
+          <Button onClick={onClose} variant="outline">
+            Close
+          </Button>
         </div>
       </DialogContent>
     </Dialog>

@@ -1,24 +1,32 @@
 import { useState, useEffect, useRef } from 'react'
-import { Bot, Send, Loader2, Wand2, MessageSquare, Undo, Redo, X } from 'lucide-react'
+import { Bot, Send, MessageSquare, Undo, Redo, X } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
-import { Card } from '@/components/ui/Card'
-import { Badge } from '@/components/ui/Badge'
 import { toast } from 'sonner'
 import { useEditorStore } from '@/store/editorStore'
 import { AdvancedAI, StoreActions } from '@/engine/advancedAI'
 import { motion, AnimatePresence } from 'framer-motion'
+import { cn } from '@/lib/utils'
 
 interface Message {
   id: string
   role: 'user' | 'assistant'
   content: string
   timestamp: number
-  suggestions?: any[]
+  suggestions?: Array<{
+    id: string
+    title: string
+    description: string
+    blocks: Array<{ type: string; properties: Record<string, unknown> }>
+  }>
   actions?: string[]
 }
 
-export function AIHelper() {
-  const [isOpen, setIsOpen] = useState(false)
+interface AIHelperProps {
+  isSidebar?: boolean
+}
+
+export function AIHelper({ isSidebar = false }: AIHelperProps) {
+  const [isOpen, setIsOpen] = useState(isSidebar)
   const [messages, setMessages] = useState<Message[]>([])
   const [input, setInput] = useState('')
   const [isTyping, setIsTyping] = useState(false)
@@ -40,10 +48,16 @@ export function AIHelper() {
     canRedo,
   } = useEditorStore()
 
-  const ai = new AdvancedAI()
+  const aiRef = useRef<AdvancedAI>(new AdvancedAI())
+  const ai = aiRef.current
+
+  useEffect(() => {
+    ai.loadModel()
+  }, [ai])
 
   const storeActions: StoreActions = {
-    addBlock: (type, position, _properties) => addBlock(type, position),
+    addBlock: (type, position, initialProperties) =>
+      addBlock(type as any, position, initialProperties),
     removeBlock,
     updateBlock,
     addConnection,
@@ -88,7 +102,6 @@ export function AIHelper() {
         setMessages(prev => [...prev, assistantMessage])
         setIsTyping(false)
 
-        // Handle pending action
         if (response.pendingAction) {
           toast.info(
             `AI suggests: ${response.pendingAction.description}. Click "Execute" to apply.`,
@@ -96,250 +109,220 @@ export function AIHelper() {
               action: {
                 label: 'Execute',
                 onClick: () => {
+                  if (response.pendingAction?.blocks) {
+                    response.pendingAction.blocks.forEach((block: any, index: number) => {
+                      // @ts-ignore
+                      addBlock(
+                        block.type,
+                        {
+                          x: 200 + (block.offset?.x ?? index * 220),
+                          y: 200 + (block.offset?.y ?? 0),
+                        },
+                        block.properties
+                      )
+                    })
+                  }
                   response.pendingAction!.action()
                   ai.executePendingAction(response.pendingAction!.id)
-                  toast.success('Action executed!')
+                  toast.success('Orchestration complete!')
                 },
               },
             }
           )
         }
-      }, 800) // Simulate typing delay
+      }, 800)
     } catch (error) {
       setIsTyping(false)
       toast.error('Failed to get AI response')
     }
   }
 
-  const handleApplySuggestion = (suggestion: any) => {
+  const handleApplySuggestion = (suggestion: Record<string, any>) => {
     if (suggestion.blocks && suggestion.blocks.length > 0) {
-      suggestion.blocks.forEach((block: any) => {
-        addBlock(block.type, block.position)
+      suggestion.blocks.forEach((block: { type: string; properties: Record<string, unknown> }) => {
+        addBlock(block.type as any, { x: 100, y: 100 }, block.properties)
       })
       toast.success(`Applied: ${suggestion.title}`)
     }
   }
 
-  const handleQuickAction = (action: string) => {
-    const quickMessages: Record<string, string> = {
-      build_moderation: 'Build a moderation system',
-      build_welcome: 'Create a welcome bot',
-      add_slash_command: 'Add a slash command',
-      explain_commands: 'Explain how commands work',
-      list_events: 'Show me available events',
-    }
-
-    const message = quickMessages[action] || action
-    setInput(message)
-    handleSend()
-  }
+  // const handleQuickAction = (action: string) => {
+  //   const quickMessages: Record<string, string> = {
+  //     build_moderation: 'Build a moderation system',
+  //     build_welcome: 'Create a welcome bot',
+  //     add_slash_command: 'Add a slash command',
+  //   }
+  //   const message = quickMessages[action] || action
+  //   setInput(message)
+  //   handleSend()
+  // }
 
   return (
-    <div className="fixed bottom-8 right-8 z-50">
+    <div className="fixed bottom-12 right-12 z-100">
       <AnimatePresence>
         {isOpen ? (
           <motion.div
-            initial={{ scale: 0.9, opacity: 0, y: 20 }}
-            animate={{ scale: 1, opacity: 1, y: 0 }}
-            exit={{ scale: 0.9, opacity: 0, y: 20 }}
-            transition={{ duration: 0.2 }}
+            initial={{ scale: 0.9, opacity: 0, y: 50, filter: 'blur(10px)' }}
+            animate={{ scale: 1, opacity: 1, y: 0, filter: 'blur(0px)' }}
+            exit={{ scale: 0.9, opacity: 0, y: 50, filter: 'blur(10px)' }}
+            className="w-[480px] h-[680px] glass-premium shadow-[0_32px_128px_rgba(0,0,0,0.8)] flex flex-col overflow-hidden border-white/5 rounded-[48px] backdrop-blur-3xl"
           >
-            <Card className="[w-[450px] [h-[600px] border-3 border-black dark:border-white shadow-neo-lg rounded-xl overflow-hidden flex flex-col">
-              {/* Header */}
-              <div className="bg-primary text-primary-foreground p-4 border-b-3 border-black dark:border-white flex items-center justify-between shrink-0">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 bg-white dark:bg-black border-2 border-black dark:border-white rounded-lg flex items-center justify-center shadow-sm">
-                    <Bot className="w-5 h-5 text-black dark:text-white" />
-                  </div>
-                  <div>
-                    <h3 className="font-black text-sm uppercase tracking-tighter">AI Assistant</h3>
-                    <div className="flex items-center gap-2">
-                      <div className="w-2 h-2 bg-secondary rounded-full animate-pulse" />
-                      <p className="text-[9px] font-bold uppercase tracking-widest opacity-80">
-                        Online
-                      </p>
-                    </div>
-                  </div>
+            {/* Header */}
+            <div className="p-8 border-b border-white/5 bg-white/2 flex items-center justify-between shrink-0">
+              <div className="flex items-center gap-5">
+                <div className="w-12 h-12 bg-emerald-500/10 border border-emerald-500/20 rounded-2xl flex items-center justify-center shadow-[inset_0_4px_12px_rgba(16,185,129,0.1)]">
+                  <Bot className="w-6 h-6 text-emerald-400" />
                 </div>
-                <div className="flex items-center gap-1">
-                  <button
-                    onClick={undo}
-                    disabled={!canUndo}
-                    className="hover:bg-white/20 p-2 rounded-lg transition-colors disabled:opacity-50"
-                    title="Undo"
-                  >
-                    <Undo className="w-4 h-4" />
-                  </button>
-                  <button
-                    onClick={redo}
-                    disabled={!canRedo}
-                    className="hover:bg-white/20 p-2 rounded-lg transition-colors disabled:opacity-50"
-                    title="Redo"
-                  >
-                    <Redo className="w-4 h-4" />
-                  </button>
-                  <button
-                    onClick={() => setIsOpen(false)}
-                    className="hover:bg-white/20 p-2 rounded-lg transition-colors"
-                  >
-                    <X className="w-4 h-4" />
-                  </button>
+                <div>
+                  <h3 className="text-base font-bold text-slate-200 tracking-tight">Kyto AI</h3>
+                  <div className="flex items-center gap-2 mt-1">
+                    <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse shadow-[0_0_8px_rgba(16,185,129,0.5)]" />
+                    <span className="text-[10px] font-black uppercase tracking-widest text-slate-500">
+                      Neural Engine Active
+                    </span>
+                  </div>
                 </div>
               </div>
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={undo}
+                  disabled={!canUndo}
+                  className="p-2.5 hover:bg-white/5 rounded-xl transition-all disabled:opacity-20"
+                >
+                  <Undo className="w-4 h-4 text-slate-400" />
+                </button>
+                <button
+                  onClick={redo}
+                  disabled={!canRedo}
+                  className="p-2.5 hover:bg-white/5 rounded-xl transition-all disabled:opacity-20"
+                >
+                  <Redo className="w-4 h-4 text-slate-400" />
+                </button>
+                <button
+                  onClick={() => setIsOpen(false)}
+                  className="p-2.5 hover:bg-white/5 rounded-xl transition-all ml-2"
+                >
+                  <X className="w-6 h-6 text-slate-500" />
+                </button>
+              </div>
+            </div>
 
-              {/* Messages */}
-              <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-white dark:bg-zinc-950">
-                {messages.length === 0 && (
-                  <div className="text-center py-8">
-                    <div className="w-16 h-16 mx-auto mb-4 bg-primary/10 border-3 border-black dark:border-white rounded-2xl flex items-center justify-center">
-                      <MessageSquare className="w-8 h-8 text-primary" />
-                    </div>
-                    <p className="text-sm font-bold uppercase tracking-tight mb-2 text-slate-900 dark:text-white">
-                      Start a Conversation
-                    </p>
-                    <p className="text-xs text-black/50 dark:text-white/50 mb-4 font-bold">
-                      Ask me anything about building Discord bots!
-                    </p>
-                    <div className="flex flex-wrap gap-2 justify-center max-w-xs mx-auto">
-                      {['How do I start?', 'Build moderation bot', 'Explain slash commands'].map(
-                        q => (
-                          <button
-                            key={q}
-                            onClick={() => {
-                              setInput(q)
-                              setTimeout(handleSend, 100)
-                            }}
-                            className="px-3 py-1 bg-muted/20 border-2 border-black dark:border-white rounded-none text-[10px] font-black uppercase hover:bg-primary hover:text-primary-foreground transition-colors"
-                          >
-                            {q}
-                          </button>
-                        )
-                      )}
-                    </div>
+            {/* Content */}
+            <div className="flex-1 overflow-y-auto p-10 space-y-8 custom-scrollbar">
+              {messages.length === 0 && (
+                <div className="text-center py-20 flex flex-col items-center">
+                  <div className="w-24 h-24 mb-10 bg-white/2 border border-white/5 rounded-[40px] flex items-center justify-center shadow-inner group">
+                    <MessageSquare className="w-10 h-10 text-emerald-400/40 group-hover:scale-110 transition-transform duration-500" />
                   </div>
-                )}
+                  <h4 className="text-xl font-bold text-white mb-3">Workspace Intelligence</h4>
+                  <p className="text-sm text-slate-500 max-w-[280px] leading-relaxed">
+                    I can orchestrate logic blocks, optimize execution traces, and build complex bot
+                    systems from natural language.
+                  </p>
+                </div>
+              )}
 
-                {messages.map(msg => (
+              {messages.map(msg => (
+                <div
+                  key={msg.id}
+                  className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
+                >
                   <div
-                    key={msg.id}
-                    className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
-                  >
-                    <div
-                      className={`max-w-[85%] ${msg.role === 'user' ? 'bg-primary text-primary-foreground' : 'bg-muted/20 border-2 border-black dark:border-white'} p-3 rounded-none`}
-                    >
-                      <p className="text-xs font-bold leading-relaxed whitespace-pre-line">
-                        {msg.content}
-                      </p>
-
-                      {/* Suggestions */}
-                      {msg.suggestions && msg.suggestions.length > 0 && (
-                        <div className="mt-3 space-y-2">
-                          {msg.suggestions.map((sug: any) => (
-                            <div
-                              key={sug.id}
-                              className="bg-white dark:bg-black border-2 border-black dark:border-white rounded-none p-2"
-                            >
-                              <div className="flex items-start justify-between gap-2 mb-2">
-                                <div>
-                                  <h4 className="text-[10px] font-black uppercase">{sug.title}</h4>
-                                  <p className="text-[9px] opacity-70">{sug.description}</p>
-                                </div>
-                                <Badge variant="default">{Math.round(sug.confidence * 100)}%</Badge>
-                              </div>
-                              {sug.blocks && sug.blocks.length > 0 && (
-                                <Button
-                                  onClick={() => handleApplySuggestion(sug)}
-                                  size="sm"
-                                  variant="neo"
-                                  className="w-full mt-1"
-                                >
-                                  <Wand2 className="w-3 h-3 mr-1" />
-                                  Apply
-                                </Button>
-                              )}
-                            </div>
-                          ))}
-                        </div>
-                      )}
-
-                      {/* Quick Actions */}
-                      {msg.actions && msg.actions.length > 0 && (
-                        <div className="mt-2 flex flex-wrap gap-1">
-                          {msg.actions.map((action: string) => (
-                            <button
-                              key={action}
-                              onClick={() => handleQuickAction(action)}
-                              className="px-2 py-1 bg-white dark:bg-black border border-black/10 dark:border-white/10 rounded-lg text-[9px] font-bold uppercase hover:bg-accent/10 hover:border-accent hover:text-accent transition-colors shadow-sm"
-                            >
-                              {action.replace(/_/g, ' ')}
-                            </button>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                ))}
-
-                {/* Typing Indicator */}
-                {isTyping && (
-                  <div className="flex justify-start">
-                    <div className="bg-muted/20 border-2 border-black/10 dark:border-white/10 p-3 rounded-2xl rounded-tl-none">
-                      <div className="flex gap-1">
-                        <div className="w-1.5 h-1.5 bg-black dark:bg-white rounded-full animate-pulse" />
-                        <div className="w-1.5 h-1.5 bg-black dark:bg-white rounded-full animate-pulse delay-100" />
-                        <div className="w-1.5 h-1.5 bg-black dark:bg-white rounded-full animate-pulse delay-200" />
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                <div ref={messagesEndRef} />
-              </div>
-
-              {/* Input */}
-              {/* Input */}
-              <div className="p-4 border-t-2 border-black/10 dark:border-white/10 bg-slate-50 dark:bg-black/20 shrink-0">
-                <div className="flex gap-2">
-                  <input
-                    type="text"
-                    value={input}
-                    onChange={e => setInput(e.target.value)}
-                    onKeyDown={e => e.key === 'Enter' && handleSend()}
-                    placeholder="Ask me anything..."
-                    className="flex-1 px-4 py-2 bg-white dark:bg-black border border-black/10 dark:border-white/10 rounded-lg text-xs font-medium placeholder:text-slate-400 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 shadow-sm transition-all"
-                    disabled={isTyping}
-                  />
-                  <Button
-                    onClick={handleSend}
-                    disabled={!input.trim() || isTyping}
-                    className="shrink-0 rounded-lg shadow-sm"
-                  >
-                    {isTyping ? (
-                      <Loader2 className="w-4 h-4 animate-spin" />
-                    ) : (
-                      <Send className="w-4 h-4" />
+                    className={cn(
+                      'max-w-[85%] p-6 rounded-[32px] shadow-2xl transition-all',
+                      msg.role === 'user'
+                        ? 'bg-emerald-500 text-black font-bold rounded-tr-none'
+                        : 'bg-white/3 border border-white/5 text-slate-200 rounded-tl-none'
                     )}
-                  </Button>
+                  >
+                    <p className="text-[13px] leading-relaxed">{msg.content}</p>
+
+                    {msg.suggestions?.map((sug: any) => (
+                      <div
+                        key={sug.id}
+                        className="mt-6 p-5 bg-black/40 border border-white/5 rounded-2xl"
+                      >
+                        <div className="flex justify-between items-start mb-4">
+                          <div>
+                            <h5 className="text-[11px] font-black uppercase tracking-widest text-emerald-400">
+                              {sug.title}
+                            </h5>
+                            <p className="text-[10px] text-slate-500 mt-1">{sug.description}</p>
+                          </div>
+                          <span className="text-[9px] font-black text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/10">
+                            MATCH
+                          </span>
+                        </div>
+                        <Button
+                          onClick={() => handleApplySuggestion(sug)}
+                          className="w-full bg-white/5 hover:bg-white/10 border-white/5 text-white text-[10px] font-bold h-10 rounded-xl"
+                        >
+                          Execute Orchestration
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
                 </div>
+              ))}
+
+              {isTyping && (
+                <div className="flex justify-start">
+                  <div className="bg-white/3 border border-white/5 p-4 rounded-2xl flex gap-1.5">
+                    {[0, 1, 2].map(i => (
+                      <motion.div
+                        key={i}
+                        animate={{ opacity: [0.2, 1, 0.2] }}
+                        transition={{ duration: 1, repeat: Infinity, delay: i * 0.2 }}
+                        className="w-1.5 h-1.5 bg-emerald-500 rounded-full"
+                      />
+                    ))}
+                  </div>
+                </div>
+              )}
+              <div ref={messagesEndRef} />
+            </div>
+
+            {/* Input */}
+            <div className="p-8 border-t border-white/5 bg-white/1">
+              <div className="relative">
+                <input
+                  type="text"
+                  value={input}
+                  onChange={e => setInput(e.target.value)}
+                  onKeyDown={e => e.key === 'Enter' && handleSend()}
+                  placeholder="Request bot orchestration..."
+                  className="w-full bg-black/60 border border-white/5 rounded-3xl pl-7 pr-16 py-5 text-sm text-white outline-none focus:ring-1 focus:ring-emerald-500/30 transition-all placeholder:text-slate-700 font-medium"
+                />
+                <button
+                  onClick={handleSend}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 w-12 h-12 bg-emerald-500 text-black rounded-2xl flex items-center justify-center shadow-emerald hover:bg-emerald-400 transition-all active:scale-90"
+                >
+                  <Send className="w-5 h-5" />
+                </button>
               </div>
-            </Card>
+            </div>
           </motion.div>
         ) : (
-          <motion.div
-            initial={{ scale: 0.8, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            exit={{ scale: 0.8, opacity: 0 }}
+          <motion.button
+            whileHover={{ scale: 1.05, y: -4 }}
+            whileTap={{ scale: 0.95 }}
+            onClick={() => setIsOpen(true)}
+            className="group relative flex items-center gap-5 bg-black border border-white/5 pl-6 pr-8 py-5 rounded-[40px] shadow-[0_32px_64px_rgba(0,0,0,0.5)]"
           >
-            <Button
-              onClick={() => setIsOpen(true)}
-              size="lg"
-              className="shadow-xl relative rounded-xl pr-6 bg-indigo-600 hover:bg-indigo-700 text-white border-2 border-slate-900 dark:border-white/20"
-            >
-              <Bot className="w-5 h-5 mr-2" />
-              AI Assistant
-              <div className="absolute -top-1 -right-1 w-3 h-3 bg-secondary rounded-full border-2 border-white animate-pulse" />
-            </Button>
-          </motion.div>
+            <div className="absolute inset-0 bg-emerald-500/5 rounded-[40px] blur-2xl opacity-0 group-hover:opacity-100 transition-opacity" />
+            <div className="relative w-12 h-12 bg-emerald-500/10 border border-emerald-500/20 rounded-2xl flex items-center justify-center shadow-inner scale-110">
+              <Bot className="w-7 h-7 text-emerald-400" />
+            </div>
+            <div className="relative text-left">
+              <p className="text-[13px] font-bold text-white tracking-tight">AI Orchestrator</p>
+              <div className="flex items-center gap-1.5 mt-1">
+                <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse shadow-emerald" />
+                <span className="text-[9px] font-black uppercase tracking-widest text-slate-500">
+                  Kyto Neural Online
+                </span>
+              </div>
+            </div>
+          </motion.button>
         )}
       </AnimatePresence>
     </div>

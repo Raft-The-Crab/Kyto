@@ -1,32 +1,33 @@
+'use client'
+
 import * as React from 'react'
 import { Slot } from '@radix-ui/react-slot'
 import { cva, type VariantProps } from 'class-variance-authority'
+import { Loader2 } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import { motion } from 'framer-motion'
 
 const buttonVariants = cva(
-  'inline-flex items-center justify-center whitespace-nowrap rounded-xl text-xs font-bold uppercase tracking-widest ring-offset-background transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border active:scale-95 shadow-sm',
+  'inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-2xl text-sm font-semibold ring-offset-background transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 relative overflow-hidden active:scale-[0.98]',
   {
     variants: {
       variant: {
-        default:
-          'bg-indigo-600 text-white border-indigo-700 hover:bg-indigo-700 shadow-indigo-500/20 focus-visible:ring-indigo-400',
+        default: 'bg-primary text-primary-foreground hover:bg-primary/90 shadow-lg hover:shadow-xl',
         destructive:
-          'bg-red-600 text-white border-red-700 hover:bg-red-700 shadow-red-500/20 focus-visible:ring-red-400',
-        outline:
-          'bg-white dark:bg-black border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-900 text-slate-900 dark:text-white focus-visible:ring-slate-400',
+          'bg-destructive text-destructive-foreground hover:bg-destructive/90 shadow-lg hover:shadow-xl',
+        outline: 'border-2 border-input bg-background hover:bg-accent hover:text-accent-foreground',
         secondary:
-          'bg-emerald-500 text-white border-emerald-600 hover:bg-emerald-600 shadow-emerald-500/20 focus-visible:ring-emerald-400',
-        ghost:
-          'border-transparent shadow-none hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300 focus-visible:ring-slate-300',
-        link: 'text-indigo-600 underline-offset-4 hover:underline border-0 shadow-none focus-visible:ring-indigo-300',
-        neo: 'bg-white dark:bg-black text-black dark:text-white border-black dark:border-white shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] dark:shadow-[4px_4px_0px_0px_rgba(255,255,255,1)] hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] dark:hover:shadow-[2px_2px_0px_0px_rgba(255,255,255,1)] focus-visible:ring-black dark:focus-visible:ring-white',
+          'bg-secondary text-secondary-foreground hover:bg-secondary/80 shadow-md hover:shadow-lg',
+        ghost: 'hover:bg-accent hover:text-accent-foreground',
+        link: 'text-primary underline-offset-4 hover:underline',
+        premium:
+          'bg-gradient-to-r from-indigo-500 to-purple-500 text-white hover:from-indigo-600 hover:to-purple-600 shadow-lg shadow-indigo-500/50 hover:shadow-xl hover:shadow-indigo-500/60',
       },
       size: {
-        default: 'h-12 px-6 py-3',
-        sm: 'h-10 px-4',
-        lg: 'h-16 px-10 text-sm',
-        icon: 'h-12 w-12',
+        default: 'h-10 px-4 py-2',
+        sm: 'h-9 rounded-xl px-3',
+        lg: 'h-11 rounded-2xl px-8',
+        xl: 'h-14 rounded-3xl px-10 text-base',
+        icon: 'h-10 w-10',
       },
     },
     defaultVariants: {
@@ -39,25 +40,67 @@ const buttonVariants = cva(
 export interface ButtonProps
   extends React.ButtonHTMLAttributes<HTMLButtonElement>, VariantProps<typeof buttonVariants> {
   asChild?: boolean
+  loading?: boolean
+  ripple?: boolean
 }
 
 const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
-  ({ className, variant, size, asChild = false, ...props }, ref) => {
+  (
+    {
+      className,
+      variant,
+      size,
+      asChild = false,
+      loading,
+      ripple = true,
+      children,
+      onClick,
+      ...props
+    },
+    ref
+  ) => {
     const Comp = asChild ? Slot : 'button'
+    const [ripples, setRipples] = React.useState<Array<{ x: number; y: number; id: number }>>([])
 
-    // Ensure buttons default to type='button' to avoid accidental form submits
-    const resolvedProps = { type: (props as any).type ?? 'button', ...props }
+    const handleClick = (e: React.MouseEvent<HTMLButtonElement>) => {
+      if (ripple && !loading) {
+        const rect = e.currentTarget.getBoundingClientRect()
+        const x = e.clientX - rect.left
+        const y = e.clientY - rect.top
+        const id = Date.now()
 
-    const ButtonElement = (
-      <Comp className={cn(buttonVariants({ variant, size, className }))} ref={ref} {...resolvedProps} />
-    )
-
-    if (asChild) return ButtonElement
+        setRipples(prev => [...prev, { x, y, id }])
+        setTimeout(() => {
+          setRipples(prev => prev.filter(r => r.id !== id))
+        }, 600)
+      }
+      onClick?.(e)
+    }
 
     return (
-      <motion.div whileTap={{ scale: 0.98 }} className="inline-block">
-        {ButtonElement}
-      </motion.div>
+      <Comp
+        className={cn(buttonVariants({ variant, size, className }))}
+        ref={ref}
+        onClick={handleClick}
+        disabled={loading || props.disabled}
+        {...props}
+      >
+        {ripple &&
+          ripples.map(ripple => (
+            <span
+              key={ripple.id}
+              className="absolute pointer-events-none rounded-full bg-white/30 animate-ripple"
+              style={{
+                left: ripple.x,
+                top: ripple.y,
+                width: 0,
+                height: 0,
+              }}
+            />
+          ))}
+        {loading && <Loader2 className="h-4 w-4 animate-spin" />}
+        {children}
+      </Comp>
     )
   }
 )

@@ -1,9 +1,7 @@
 import React from 'react'
-import { Routes, Route, Navigate, useLocation } from 'react-router-dom'
+import { Routes, Route, Navigate, useLocation, useParams } from 'react-router-dom'
 import LandingPage from './pages/LandingPage'
-import CommandsListPage from './pages/CommandsListPage'
-import EventsListPage from './pages/EventsListPage'
-import ModulesListPage from './pages/ModulesListPage'
+import BuilderPage from './pages/BuilderPage'
 import MarketplacePage from './pages/MarketplacePage'
 import DashboardPage from './pages/DashboardPage'
 import LoginPage from './pages/LoginPage'
@@ -16,9 +14,15 @@ import ChangelogPage from './pages/ChangelogPage'
 import CommandBuilderPage from './pages/CommandBuilderPage'
 import EventBuilderPage from './pages/EventBuilderPage'
 import ModuleBuilderPage from './pages/ModuleBuilderPage'
-import { StatusPage } from './pages/StatusPage'
-import { DocumentationPage } from './pages/DocumentationPage'
-import { IntegrationsPage } from './pages/IntegrationsPage'
+import StatusPage from './pages/StatusPage'
+import IntegrationsPage from './pages/IntegrationsPage'
+import LicensePage from './pages/LicensePage'
+import FeaturesPage from './pages/FeaturesPage'
+import AboutPage from './pages/AboutPage'
+import ContactPage from './pages/ContactPage'
+import BlogPage from './pages/BlogPage'
+import CareersPage from './pages/CareersPage'
+import HostingPage from './pages/HostingPage'
 
 import { ThemeProvider } from '@/components/providers/ThemeProvider'
 import { CommandPalette } from '@/components/layout/CommandPalette'
@@ -28,15 +32,20 @@ import { AnimatePresence, motion } from 'framer-motion'
 function PageWrapper({ children }: { children: React.ReactNode }) {
   return (
     <motion.div
-      initial={{ opacity: 0, scale: 0.99 }}
-      animate={{ opacity: 1, scale: 1 }}
-      exit={{ opacity: 0 }}
-      transition={{ duration: 0.2, ease: 'easeOut' }}
+      initial={{ opacity: 0, y: 4 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: -4 }}
+      transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
       className="h-full"
     >
       {children}
     </motion.div>
   )
+}
+
+const ParameterizedRedirect = ({ to }: { to: string }) => {
+  const params = useParams()
+  return <Navigate to={to.replace(':id', params.id || '')} replace />
 }
 
 function App() {
@@ -80,55 +89,30 @@ function App() {
             }
           />
           <Route
-            path="/commands"
+            path="/builder"
             element={
               <PageWrapper>
-                <CommandsListPage />
+                <BuilderPage />
               </PageWrapper>
             }
           />
           <Route
-            path="/events"
-            element={
-              <PageWrapper>
-                <EventsListPage />
-              </PageWrapper>
-            }
+            path="/builder/commands"
+            element={<Navigate to="/builder?tab=commands" replace />}
           />
-          <Route
-            path="/modules"
-            element={
-              <PageWrapper>
-                <ModulesListPage />
-              </PageWrapper>
-            }
-          />
+          <Route path="/builder/events" element={<Navigate to="/builder?tab=events" replace />} />
+          <Route path="/builder/modules" element={<Navigate to="/builder?tab=modules" replace />} />
 
-          {/* Builder Routes - Dedicated Pages */}
+          <Route path="/commands" element={<Navigate to="/builder?tab=commands" replace />} />
+          <Route path="/events" element={<Navigate to="/builder?tab=events" replace />} />
+          <Route path="/modules" element={<Navigate to="/builder?tab=modules" replace />} />
+
           <Route
             path="/command/:id"
-            element={
-              <PageWrapper>
-                <CommandBuilderPage />
-              </PageWrapper>
-            }
+            element={<ParameterizedRedirect to="/builder/commands/:id" />}
           />
-          <Route
-            path="/event/:id"
-            element={
-              <PageWrapper>
-                <EventBuilderPage />
-              </PageWrapper>
-            }
-          />
-          <Route
-            path="/module/:id"
-            element={
-              <PageWrapper>
-                <ModuleBuilderPage />
-              </PageWrapper>
-            }
-          />
+          <Route path="/event/:id" element={<ParameterizedRedirect to="/builder/events/:id" />} />
+          <Route path="/module/:id" element={<ParameterizedRedirect to="/builder/modules/:id" />} />
           <Route
             path="/builder/commands/:id"
             element={
@@ -171,7 +155,7 @@ function App() {
             }
           />
           <Route
-            path="/terms"
+            path="/tos"
             element={
               <PageWrapper>
                 <TermsOfService />
@@ -211,13 +195,14 @@ function App() {
             }
           />
           <Route
-            path="/documentation"
+            path="/hosting"
             element={
               <PageWrapper>
-                <DocumentationPage />
+                <HostingPage />
               </PageWrapper>
             }
           />
+          <Route path="/documentation" element={<Navigate to="/docs" replace />} />
           <Route
             path="/integrations"
             element={
@@ -226,7 +211,55 @@ function App() {
               </PageWrapper>
             }
           />
-          <Route path="/builder" element={<Navigate to="/commands" replace />} />
+          <Route
+            path="/license"
+            element={
+              <PageWrapper>
+                <LicensePage />
+              </PageWrapper>
+            }
+          />
+          <Route
+            path="/features"
+            element={
+              <PageWrapper>
+                <FeaturesPage />
+              </PageWrapper>
+            }
+          />
+          <Route
+            path="/about"
+            element={
+              <PageWrapper>
+                <AboutPage />
+              </PageWrapper>
+            }
+          />
+          <Route
+            path="/contact"
+            element={
+              <PageWrapper>
+                <ContactPage />
+              </PageWrapper>
+            }
+          />
+          <Route
+            path="/blog"
+            element={
+              <PageWrapper>
+                <BlogPage />
+              </PageWrapper>
+            }
+          />
+          <Route
+            path="/careers"
+            element={
+              <PageWrapper>
+                <CareersPage />
+              </PageWrapper>
+            }
+          />
+          <Route path="/pricing" element={<Navigate to="/license" replace />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </AnimatePresence>

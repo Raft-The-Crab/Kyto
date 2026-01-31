@@ -47,15 +47,15 @@ class ApiClient {
 
   // Projects API
   async listProjects() {
-    return this.request<{ projects: any[] }>('/api/projects')
+    return this.request<{ projects: unknown[] }>('/api/projects')
   }
 
   async getProject(id: string) {
-    return this.request<{ project: any }>(`/api/projects/${id}`)
+    return this.request<{ project: unknown }>(`/api/projects/${id}`)
   }
 
-  async saveProject(project: any) {
-    return this.request<{ project: any }>('/api/projects', {
+  async saveProject(project: unknown) {
+    return this.request<{ project: unknown }>('/api/projects', {
       method: 'POST',
       body: JSON.stringify(project),
     })
@@ -68,31 +68,34 @@ class ApiClient {
   }
 
   // AI Assistant API
-  async getAISuggestions(canvas: any, context?: string) {
-    return this.request<{ suggestions: any[] }>('/api/ai/suggest', {
+  async getAISuggestions(canvas: unknown, context?: string) {
+    return this.request<{ suggestions: unknown[] }>('/api/ai/suggest', {
       method: 'POST',
       body: JSON.stringify({ canvas, context }),
     })
   }
 
   // Export API
-  async exportBot(canvas: any, language: 'discord.js' | 'discord.py', settings: any) {
-    return this.request<{ files: any[]; dependencies: any; instructions: string }>('/api/export', {
-      method: 'POST',
-      body: JSON.stringify({ canvas, language, settings }),
-    })
+  async exportBot(canvas: unknown, language: 'discord.js' | 'discord.py', settings: unknown) {
+    return this.request<{ files: unknown[]; dependencies: unknown; instructions: string }>(
+      '/api/export',
+      {
+        method: 'POST',
+        body: JSON.stringify({ canvas, language, settings }),
+      }
+    )
   }
 
   // Preview export (returns files with issues and preview snippets)
-  async exportPreview(canvas: any, language: 'discord.js' | 'discord.py', settings: any) {
-    return this.request<{ files: any[] }>(`/api/export?preview=true`, {
+  async exportPreview(canvas: unknown, language: 'discord.js' | 'discord.py', settings: unknown) {
+    return this.request<{ files: unknown[] }>(`/api/export?preview=true`, {
       method: 'POST',
       body: JSON.stringify({ canvas, language, settings }),
     })
   }
 
   // Request backend to generate a ZIP and return as blob
-  async exportZip(canvas: any, language: 'discord.js' | 'discord.py', settings: any) {
+  async exportZip(canvas: unknown, language: 'discord.js' | 'discord.py', settings: unknown) {
     try {
       const response = await fetch(`${API_BASE}/api/export?format=zip`, {
         method: 'POST',

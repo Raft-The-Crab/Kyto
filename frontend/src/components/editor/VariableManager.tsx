@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { motion, AnimatePresence } from 'framer-motion'
 import { Plus, Trash2, X } from 'lucide-react'
 import { useProjectStore } from '@/store/projectStore'
 
@@ -23,93 +24,112 @@ export function VariableManager() {
   }
 
   return (
-    <div className="h-full bg-white dark:bg-slate-950 flex flex-col transition-colors border-l border-slate-200 dark:border-slate-800">
-      <div className="p-5 border-b-2 border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/30 flex items-center justify-between">
-        <h2 className="text-xl font-black text-slate-900 dark:text-white uppercase tracking-tight">
-          Global Variables
-        </h2>
+    <div className="h-full matte-dark md:bg-black/20 flex flex-col transition-colors border-l border-divider/50">
+      <div className="p-8 border-b border-divider bg-black/10 dark:bg-zinc-950/40 flex items-center justify-between shrink-0">
+        <div>
+          <h2 className="heading-tertiary text-lg">Variables</h2>
+          <p className="label-text text-[10px] opacity-40 lowercase first-letter:uppercase mt-0.5">
+            Manage shared values for this workspace.
+          </p>
+        </div>
         <button
           onClick={() => setIsAdding(true)}
-          className="p-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg shadow-neo-sm transition-all"
+          className="w-10 h-10 bg-indigo-500 hover:bg-indigo-600 text-white rounded-xl shadow-glow transition-all active:scale-90 flex items-center justify-center"
         >
-          <Plus className="w-4 h-4" />
+          <Plus className="w-5 h-5" />
         </button>
       </div>
 
-      <div className="flex-1 overflow-y-auto p-5 space-y-3">
-        {isAdding && (
-          <div className="p-4 bg-slate-50 dark:bg-slate-900 rounded-xl border-2 border-indigo-500 animate-in fade-in slide-in-from-top-2">
-            <div className="space-y-3">
-              <input
-                autoFocus
-                type="text"
-                placeholder="Variable Name"
-                value={newVar.name}
-                onChange={e => setNewVar(prev => ({ ...prev, name: e.target.value }))}
-                className="w-full px-3 py-2 bg-white dark:bg-slate-950 border-2 border-slate-200 dark:border-slate-800 rounded-lg text-sm font-bold"
-              />
-              <div className="flex gap-2">
-                <select
-                  value={newVar.type}
-                  onChange={e => setNewVar(prev => ({ ...prev, type: e.target.value as any }))}
-                  className="px-3 py-2 bg-white dark:bg-slate-950 border-2 border-slate-200 dark:border-slate-800 rounded-lg text-sm font-bold"
-                >
-                  <option value="string">String</option>
-                  <option value="number">Number</option>
-                  <option value="boolean">Boolean</option>
-                  <option value="secret">Secret</option>
-                </select>
+      <div className="flex-1 overflow-y-auto p-6 space-y-4 custom-scrollbar bg-black/5 dark:bg-zinc-950/20">
+        <AnimatePresence>
+          {isAdding && (
+            <motion.div
+              initial={{ opacity: 0, y: -20, scale: 0.95 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: -20, scale: 0.95 }}
+              className="p-5 matte-dark border border-indigo-500/30 rounded-[1.5rem] shadow-premium-lg"
+            >
+              <div className="space-y-4">
                 <input
+                  autoFocus
                   type="text"
-                  placeholder="Default Value"
-                  value={newVar.value}
-                  onChange={e => setNewVar(prev => ({ ...prev, value: e.target.value }))}
-                  className="flex-1 px-3 py-2 bg-white dark:bg-slate-950 border-2 border-slate-200 dark:border-slate-800 rounded-lg text-sm font-bold"
+                  placeholder="Variable Name"
+                  value={newVar.name}
+                  onChange={e => setNewVar(prev => ({ ...prev, name: e.target.value }))}
+                  className="soft-input px-4 py-2.5 text-xs h-10"
                 />
+                <div className="flex gap-2">
+                  <select
+                    value={newVar.type}
+                    onChange={e => setNewVar(prev => ({ ...prev, type: e.target.value as any }))}
+                    className="soft-input px-4 py-2.5 text-[10px] h-10 w-24 appearance-none text-center cursor-pointer"
+                  >
+                    <option value="string">STR</option>
+                    <option value="number">NUM</option>
+                    <option value="boolean">BOOL</option>
+                    <option value="secret">SEC</option>
+                  </select>
+                  <input
+                    type="text"
+                    placeholder="Default Value"
+                    value={newVar.value}
+                    onChange={e => setNewVar(prev => ({ ...prev, value: e.target.value }))}
+                    className="flex-1 soft-input px-4 py-2.5 text-xs h-10"
+                  />
+                </div>
+                <div className="flex justify-end gap-2 pt-2">
+                  <button
+                    onClick={() => setIsAdding(false)}
+                    className="p-2 hover:bg-black/5 dark:hover:bg-white/5 rounded-xl text-muted-foreground transition-all"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                  <button
+                    onClick={handleAdd}
+                    disabled={!newVar.name}
+                    className="px-6 py-2 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl font-bold text-[11px] shadow-glow-emerald disabled:opacity-20 transition-all active:scale-95"
+                  >
+                    Commit
+                  </button>
+                </div>
               </div>
-              <div className="flex justify-end gap-2 pt-2">
-                <button
-                  onClick={() => setIsAdding(false)}
-                  className="p-2 hover:bg-slate-200 dark:hover:bg-slate-800 rounded-lg text-slate-500"
-                >
-                  <X className="w-4 h-4" />
-                </button>
-                <button
-                  onClick={handleAdd}
-                  disabled={!newVar.name}
-                  className="px-4 py-2 bg-emerald-500 hover:bg-emerald-600 text-white rounded-lg font-bold text-xs"
-                >
-                  Enter
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
+            </motion.div>
+          )}
+        </AnimatePresence>
 
         {(variables || []).map(variable => (
           <div
             key={variable.id}
-            className="group p-4 bg-white dark:bg-slate-900 border-2 border-slate-100 dark:border-slate-800 rounded-xl hover:border-slate-300 dark:hover:border-slate-700 transition-all"
+            className="group p-5 matte-dark border border-divider rounded-2xl hover:border-indigo-500/30 transition-all shadow-sm"
           >
-            <div className="flex items-center justify-between mb-2">
-              <div className="flex items-center gap-2">
-                <span className="text-[10px] font-black uppercase tracking-wider bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded text-slate-500">
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center gap-3">
+                <span className="text-[9px] font-black uppercase tracking-widest bg-white/5 border border-divider/50 px-2 py-0.5 rounded-lg text-indigo-400">
                   {variable.type}
                 </span>
-                <span className="font-bold text-slate-900 dark:text-white">{variable.name}</span>
+                <span className="heading-tertiary text-[13px]">{variable.name}</span>
               </div>
               <button
                 onClick={() => deleteVariable(variable.id)}
-                className="opacity-0 group-hover:opacity-100 p-1.5 hover:bg-red-50 dark:hover:bg-red-900/20 text-red-500 rounded-lg transition-all"
+                className="opacity-0 group-hover:opacity-100 p-2 hover:bg-red-500/10 text-red-400 rounded-xl transition-all active:scale-90"
               >
                 <Trash2 className="w-4 h-4" />
               </button>
             </div>
-            <div className="text-xs font-mono text-slate-500 dark:text-slate-400 bg-slate-50 dark:bg-slate-950 p-2 rounded-lg border border-slate-100 dark:border-slate-800">
+            <div className="text-[11px] font-mono body-text opacity-60 bg-black/20 dark:bg-black/40 p-3 rounded-xl border border-divider/30 truncate">
               {variable.type === 'secret' ? '••••••••' : variable.value}
             </div>
           </div>
         ))}
+
+        {variables.length === 0 && !isAdding && (
+          <div className="text-center py-20 opacity-30 flex flex-col items-center gap-4">
+            <div className="p-4 rounded-3xl bg-white/5 border border-divider">
+              <Plus className="w-8 h-8 text-muted-foreground" />
+            </div>
+            <p className="label-text-premium text-[11px]">No variables defined yet.</p>
+          </div>
+        )}
       </div>
     </div>
   )

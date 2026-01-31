@@ -1,5 +1,5 @@
 import { memo } from 'react'
-import { Handle, Position, Node, NodeProps } from '@xyflow/react'
+import { Handle, Position, NodeProps } from '@xyflow/react'
 import { BLOCK_DEFINITIONS } from '@/lib/blocks/definitions'
 import { BlockType } from '@/types'
 import * as Icons from 'lucide-react'
@@ -8,94 +8,89 @@ import { cn } from '@/lib/utils'
 export type CustomNodeData = {
   type: BlockType
   label: string
-  properties: Record<string, any>
+  properties: Record<string, unknown>
   isValid: boolean
   errors: string[]
 }
 
-export const CustomBlockNode = memo(({ data, selected }: NodeProps<Node<CustomNodeData>>) => {
-  const definition = BLOCK_DEFINITIONS[data.type]
+export const CustomBlockNode = memo(({ data, selected }: NodeProps) => {
+  const nodeData = data as CustomNodeData
+  const definition = BLOCK_DEFINITIONS[nodeData.type]
 
   if (!definition) return null
 
   const IconComponent = Icons[definition.icon as keyof typeof Icons] as React.ComponentType<{
     className?: string
-    style?: React.CSSProperties
   }>
 
-  const hasErrors = data.errors?.length > 0
+  const hasErrors = nodeData.errors?.length > 0
 
   return (
     <div
       className={cn(
-        'relative group min-w-[140px] transition-transform duration-200 ease-out will-change-transform', // Reduced width + smooth transitions
-        selected ? 'z-50' : 'z-10'
+        'relative group min-w-[180px] transition-all duration-500 ease-out',
+        selected ? 'z-50 scale-105' : 'z-10 hover:scale-[1.02]'
       )}
     >
-      {/* Glow Effect on Selection */}
+      {/* Dynamic Glow - Softer and Spread out */}
       <div
         className={cn(
-          'absolute inset-0 rounded-xl transition-all duration-300', // rounded-2xl -> rounded-xl
-          selected
-            ? `shadow-[0_0_25px_-5px] ring-2 ring-indigo-500 opacity-100`
-            : 'opacity-0 group-hover:opacity-100 shadow-[0_0_15px_-5px] ring-1 ring-white/20'
+          'absolute -inset-1 rounded-[40px] blur-3xl opacity-0 transition-opacity duration-700',
+          selected ? 'opacity-30' : 'group-hover:opacity-15'
         )}
-        style={{
-          boxShadow: selected ? `0 0 25px -5px ${definition.color}50` : undefined, // Reduced opacity
-          borderColor: selected ? definition.color : undefined,
-        }}
+        style={{ backgroundColor: definition.color }}
       />
 
       <div
         className={cn(
-          'relative bg-[#1a1a1f] border border-white/10 rounded-xl overflow-hidden backdrop-blur-xl transition-transform layer-1',
-          selected && 'scale-[1.02]'
+          'relative bg-[#0a0a0a]/90 backdrop-blur-2xl border-2 rounded-[32px] overflow-hidden transition-all duration-300 shadow-2xl',
+          selected
+            ? 'border-white/20 ring-1 ring-white/20'
+            : 'border-white/5 group-hover:border-white/10'
         )}
       >
-        {/* Node Header */}
-        <div className="px-2.5 py-1.5 flex items-center gap-2 bg-white/5 border-b border-white/5">
+        {/* Node Header - Organic */}
+        <div className="px-5 py-4 flex items-center gap-3.5 bg-gradient-to-b from-white/5 to-transparent border-b border-white/5">
           <div
-            className="p-1 rounded-md shadow-inner relative overflow-hidden"
-            style={{ backgroundColor: `${definition.color}20` }}
+            className="w-11 h-11 rounded-2xl flex items-center justify-center shrink-0 bg-black/40 border border-white/10 shadow-inner group-hover:scale-110 transition-transform duration-500"
+            style={{ color: definition.color }}
           >
-            <div
-              className="absolute inset-0 opacity-20"
-              style={{ backgroundColor: definition.color }}
-            />
             {IconComponent && (
-              <IconComponent
-                className="w-3 h-3 relative z-10"
-                style={{ color: definition.color }}
-              />
+              <IconComponent className="w-5 h-5 drop-shadow-[0_0_8px_rgba(255,255,255,0.2)]" />
             )}
           </div>
-          <div className="min-w-0">
-            <h4 className="font-bold text-[9px] uppercase tracking-wider text-slate-200 truncate leading-none mb-0.5">
-              {definition.label || data.label}
-            </h4>
-            <p className="text-[7px] font-bold text-slate-500 truncate uppercase leading-none">
-              {definition.category}
-            </p>
+          <div className="min-w-0 flex-1">
+            <h3 className="text-[13px] font-bold text-slate-100 truncate leading-none tracking-tight mb-1">
+              {definition.label || nodeData.label}
+            </h3>
+            <div className="flex items-center gap-1.5">
+              <span
+                className="w-1.5 h-1.5 rounded-full"
+                style={{ backgroundColor: definition.color }}
+              />
+              <p className="text-[9px] font-bold uppercase tracking-wider text-slate-500">
+                {definition.category}
+              </p>
+            </div>
           </div>
           {hasErrors && (
-            <Icons.AlertCircle className="w-3 h-3 text-red-500 animate-pulse ml-auto" />
+            <div className="ml-auto w-7 h-7 rounded-full bg-red-500/10 border border-red-500/20 flex items-center justify-center animate-pulse">
+              <Icons.AlertCircle className="w-4 h-4 text-red-500" />
+            </div>
           )}
         </div>
 
-        {/* Node Content Preview */}
-        {data.properties && Object.keys(data.properties).length > 0 && (
-          <div className="px-2.5 py-1.5 space-y-1 bg-black/20">
-            {Object.entries(data.properties)
-              .slice(0, 3) // Show one more property since it's smaller
+        {/* Node Content Preview - Cleaner */}
+        {nodeData.properties && Object.keys(nodeData.properties).length > 0 && (
+          <div className="px-5 py-4 space-y-2.5 bg-black/20">
+            {Object.entries(nodeData.properties)
+              .slice(0, 3)
               .map(([key, value]) => (
-                <div
-                  key={key}
-                  className="flex justify-between items-center gap-3 text-[8px] group/prop"
-                >
-                  <span className="font-bold text-slate-500 uppercase tracking-widest truncate max-w-[50px]">
+                <div key={key} className="flex justify-between items-center gap-3 group/item">
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 truncate group-hover/item:text-slate-400 transition-colors">
                     {key}
                   </span>
-                  <span className="text-slate-300 font-mono bg-white/5 px-1 rounded truncate max-w-[70px] border border-white/5 group-hover/prop:border-white/20 transition-colors">
+                  <span className="text-[11px] font-semibold text-slate-300 truncate max-w-[100px] bg-white/5 px-2.5 py-1 rounded-lg border border-white/5 group-hover/item:border-white/10 transition-colors">
                     {String(value)}
                   </span>
                 </div>
@@ -104,51 +99,37 @@ export const CustomBlockNode = memo(({ data, selected }: NodeProps<Node<CustomNo
         )}
       </div>
 
-      {/* Input Handle - Moved Outside */}
+      {/* Handles - Organic Pills */}
       {definition.inputs > 0 && (
         <Handle
           type="target"
           position={Position.Top}
-          className="w-2.5! h-2.5! -top-1! bg-slate-400! border-2! border-[#1a1a1f]! hover:bg-white! hover:scale-125 transition-all z-20"
+          className="w-4! h-4! bg-slate-900! border-[3px]! border-slate-400! hover:border-emerald-400! hover:scale-125 transition-all shadow-[0_0_10px_rgba(0,0,0,0.5)]"
         />
       )}
 
-      {/* Output Handles - Moved Outside */}
       {definition.outputs === 1 && (
         <Handle
           type="source"
           position={Position.Bottom}
-          className="w-2.5! h-2.5! -bottom-1! bg-slate-400! border-2! border-[#1a1a1f]! hover:bg-white! hover:scale-125 transition-all z-20"
+          className="w-4! h-4! bg-slate-900! border-[3px]! border-slate-500! hover:border-emerald-500! hover:scale-125 transition-all shadow-[0_0_10px_rgba(0,0,0,0.5)]"
         />
       )}
 
       {definition.outputs === 2 && (
-        <div className="absolute -bottom-1 w-full flex justify-between px-4 z-20">
-          {/* True Handle */}
-          <div className="relative group/handle">
-            <div className="absolute -top-5 left-1/2 -translate-x-1/2 bg-[#1a1a1f] border border-indigo-500/30 text-indigo-400 text-[7px] font-black uppercase px-1 py-0.5 rounded opacity-0 group-hover/handle:opacity-100 transition-opacity whitespace-nowrap pointer-events-none">
-              True
-            </div>
-            <Handle
-              type="source"
-              position={Position.Bottom}
-              id="true"
-              className="relative! transform-none! left-auto! w-2.5! h-2.5! bg-indigo-500! border-2! border-[#1a1a1f]! hover:scale-125 transition-all"
-            />
-          </div>
-
-          {/* False Handle */}
-          <div className="relative group/handle">
-            <div className="absolute -top-5 left-1/2 -translate-x-1/2 bg-[#1a1a1f] border border-rose-500/30 text-rose-400 text-[7px] font-black uppercase px-1 py-0.5 rounded opacity-0 group-hover/handle:opacity-100 transition-opacity whitespace-nowrap pointer-events-none">
-              False
-            </div>
-            <Handle
-              type="source"
-              position={Position.Bottom}
-              id="false"
-              className="relative! transform-none! left-auto! w-2.5! h-2.5! bg-rose-500! border-2! border-[#1a1a1f]! hover:scale-125 transition-all"
-            />
-          </div>
+        <div className="absolute -bottom-2 w-full flex justify-between px-8">
+          <Handle
+            type="source"
+            position={Position.Bottom}
+            id="true"
+            className="relative! transform-none! left-auto! w-4! h-4! bg-slate-900! border-[3px]! border-emerald-500! hover:scale-125 transition-all shadow-[0_0_10px_rgba(16,185,129,0.3)]"
+          />
+          <Handle
+            type="source"
+            position={Position.Bottom}
+            id="false"
+            className="relative! transform-none! left-auto! w-4! h-4! bg-slate-900! border-[3px]! border-red-500! hover:scale-125 transition-all shadow-[0_0_10px_rgba(239,68,68,0.3)]"
+          />
         </div>
       )}
     </div>

@@ -25,7 +25,16 @@ export function CustomEdge({
 
   return (
     <>
-      <BaseEdge path={edgePath} markerEnd={markerEnd} style={style} />
+      <BaseEdge
+        path={edgePath}
+        markerEnd={markerEnd}
+        style={{
+          ...style,
+          strokeWidth: 2,
+          stroke: 'rgba(255, 255, 255, 0.08)',
+          filter: 'drop-shadow(0 0 8px rgba(16, 185, 129, 0.05))',
+        }}
+      />
       <EdgeLabelRenderer>
         <div
           style={{
@@ -36,11 +45,14 @@ export function CustomEdge({
           className="nodrag nopan"
         >
           <button
-            onClick={() => removeConnection(id)}
-            className="w-5 h-5 bg-red-500 rounded-full flex items-center justify-center text-white shadow-md hover:bg-red-600 hover:scale-110 transition-all cursor-pointer border-2 border-slate-900"
+            onClick={e => {
+              e.stopPropagation()
+              removeConnection(id)
+            }}
+            className="w-6 h-6 bg-slate-900 border border-white/20 rounded-full flex items-center justify-center text-slate-400 hover:text-red-400 hover:border-red-500/50 transition-all cursor-pointer shadow-xl"
             aria-label="Delete connection"
           >
-            <X className="w-3 h-3" />
+            <X className="w-3.5 h-3.5" />
           </button>
         </div>
       </EdgeLabelRenderer>

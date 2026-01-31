@@ -1,0 +1,51 @@
+{
+  "productName": "Kyto",
+  "version": "2.0.3",
+  "identifier": "com.kyto.app",
+  "build": {
+    "beforeDevCommand": "npm run dev:frontend",
+    "beforeBuildCommand": "npm run build:frontend",
+    "devPath": "http://localhost:5173",
+    "distDir": "../frontend/dist"
+  },
+  "app": {
+    "windows": [
+      {
+        "title": "Kyto - Visual Discord Bot Builder",
+        "width": 1400,
+        "height": 900,
+        "resizable": true,
+        "fullscreen": false,
+        "transparent": true,
+        "decorations": false,
+        "alwaysOnTop": false,
+        "visible": true,
+        "center": true,
+        "minWidth": 1024,
+        "minHeight": 768
+      }
+    ],
+    "security": {
+      "csp": "default-src 'self'; img-src 'self' https://* data: blob:; media-src 'self' https://*; frame-src 'self' https://*; font-src 'self' https://*; style-src 'self' 'unsafe-inline' https://*; script-src 'self' 'unsafe-eval' 'unsafe-inline' https://*; connect-src 'self' https://* http://localhost:* ws://localhost:*;"
+    }
+  },
+  "plugins": {
+    "window-state": {
+      "saveWindowPosition": true,
+      "saveWindowSize": true
+    }
+  },
+  "bundle": {
+    "active": true,
+    "targets": "all",
+    "identifier": "com.kyto.app",
+    "publisher": "Kyto Team",
+    "icon": [
+      "icons/32x32.png",
+      "icons/128x128.png",
+      "icons/128x128@2x.png",
+      "icons/icon.icns",
+      "icons/icon.ico"
+    ]
+  }
+}

@@ -6,7 +6,7 @@ import { cn } from '@/lib/utils'
 
 const STEPS = [
   {
-    title: 'Welcome to Kyto! 👋',
+    title: 'Welcome to Kyto!',
     text: 'Building Discord bots has never been easier. Follow this 30-second tour to understand the essentials.',
     icon: Sparkles,
   },

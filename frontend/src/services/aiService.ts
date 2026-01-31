@@ -14,7 +14,7 @@ export interface ModelProgress {
 }
 
 class AIService {
-  private model: any = null;
+  private model: unknown = null;
   private modelStatus: AIModelStatus = 'unloaded';
   private progressCallback: ((progress: ModelProgress) => void) | null = null;
 
@@ -40,7 +40,7 @@ class AIService {
         'text-generation',
         'Xenova/Qwen2.5-0.5B-Instruct',
         {
-          progress_callback: (progress: any) => {
+          progress_callback: (progress: { status: string; loaded?: number; total?: number }) => {
             if (progress.status === 'downloading') {
               const loaded = progress.loaded || 0;
               const total = progress.total || 1;
@@ -91,14 +91,14 @@ class AIService {
       
       const fullPrompt = `${systemPrompt}\n\nUser: ${prompt}\n\nGenerate:`;
 
-      const result = await this.model(fullPrompt, {
+      const result = await (this.model as any)(fullPrompt, {
         max_new_tokens: 256,
         temperature: 0.7,
         top_p: 0.9,
         do_sample: true,
       });
 
-      return result[0].generated_text.replace(fullPrompt, '').trim();
+      return (result as any)[0].generated_text.replace(fullPrompt, '').trim();
     } catch (error) {
       console.error('[AI Service] Generation failed:', error);
       throw error;
@@ -120,12 +120,12 @@ class AIService {
 
     try {
       const prompt = `Analyze this Discord bot request and identify the intent: "${message}"\n\nIntent:`;
-      const result = await this.model(prompt, {
+      const result = await (this.model as any)(prompt, {
         max_new_tokens: 50,
         temperature: 0.3,
       });
 
-      const intent = result[0].generated_text.replace(prompt, '').trim().toLowerCase();
+      const intent = (result as any)[0].generated_text.replace(prompt, '').trim().toLowerCase();
       
       return {
         intent,

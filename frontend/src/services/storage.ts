@@ -16,7 +16,7 @@
 interface Project {
   id: string
   name: string
-  data: any
+  data: unknown
   createdAt: number
   updatedAt: number
   size: number // bytes

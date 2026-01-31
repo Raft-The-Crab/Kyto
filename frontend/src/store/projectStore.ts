@@ -9,9 +9,12 @@ import {
   CanvasBlock,
   GlobalVariable,
   FileNode,
+  DeploymentConfig,
+  GitConfig,
 } from '@/types'
 import { generateId } from '@/lib/utils'
 import { BLOCK_DEFINITIONS } from '@/lib/blocks/definitions'
+import { ApiWrapper } from '@/lib/tauri-api'
 
 interface ProjectState {
   // Workspace State
@@ -39,8 +42,9 @@ interface ProjectState {
   deleteProject: (projectId: string) => void
   updateProjectMetadata: (id: string, updates: Partial<Project>) => void
 
-  // Internal Helper
+  // Internal Helpers
   _updateActive: (updater: (project: Project) => Partial<Project>) => void
+  _ensureActiveProject: () => string
 
   // Metadata Actions (Active Project)
   updateMetadata: (
@@ -83,6 +87,16 @@ interface ProjectState {
   renameNode: (id: string, newName: string) => void
   updateFileContent: (id: string, content: string) => void
   toggleFolder: (id: string) => void
+
+  // Deployment & Hosting
+  updateDeployment: (updates: Partial<DeploymentConfig>) => void
+  updateGit: (updates: Partial<GitConfig>) => void
+
+  // Tauri/Offline functionality
+  saveProjectToDisk: (projectId?: string) => Promise<void>
+  loadProjectFromDisk: (projectId: string) => Promise<void>
+  listProjectsFromDisk: () => Promise<string[]>
+  syncWithCloud: (projectId?: string) => Promise<boolean>
 }
 
 const createInitialProject = (id: string, name: string): Project => ({
@@ -128,6 +142,14 @@ const createInitialProject = (id: string, name: string): Project => ({
     },
   },
   rootFolderId: 'root',
+  deployment: {
+    provider: 'local',
+    status: 'stopped',
+    environment: {},
+  },
+  git: {
+    enabled: false,
+  },
   createdAt: Date.now(),
   updatedAt: Date.now(),
 })
@@ -281,20 +303,60 @@ export const useProjectStore = create<ProjectState>()(
 
       setActiveFile: (id: string) => set({ activeFileId: id }),
 
+      _ensureActiveProject: () => {
+        const state = get()
+        if (state.activeProjectId && state.projects[state.activeProjectId]) {
+          return state.activeProjectId
+        }
+
+        // Create initial project if none exists
+        const id = generateId('proj')
+        const newProject = createInitialProject(id, 'My Awesome Bot')
+        set(state => ({
+          projects: { ...state.projects, [id]: newProject },
+          activeProjectId: id,
+          name: newProject.name,
+          description: newProject.description,
+          language: newProject.language,
+          settings: newProject.settings,
+          commands: [],
+          events: [],
+          modules: [],
+          variables: [],
+        }))
+        return id
+      },
+
       // Commands
       createCommand: () => {
+        get()._ensureActiveProject()
         const id = generateId('cmd')
         const triggerId = generateId('block')
-        const definition = BLOCK_DEFINITIONS['command_slash']
+        const replyId = generateId('block')
+        const errorHandlerId = generateId('block')
+        const errorEmbedId = generateId('block')
+        const edgeId = generateId('edge')
+        const errorEdgeId = generateId('edge')
+        const errorEmbedEdgeId = generateId('edge')
 
-        const initialBlock: CanvasBlock = {
+        const triggerDef = BLOCK_DEFINITIONS['command_slash']
+        const replyDef = BLOCK_DEFINITIONS['action_reply']
+        const errorHandlerDef = BLOCK_DEFINITIONS['error_handler']
+        const errorEmbedDef = BLOCK_DEFINITIONS['send_embed']
+
+        if (!triggerDef || !replyDef || !errorHandlerDef || !errorEmbedDef) {
+          console.error('Missing block definitions for command creation')
+          return ''
+        }
+
+        const triggerBlock: CanvasBlock = {
           id: triggerId,
           type: 'command_slash',
-          position: { x: 250, y: 150 },
+          position: { x: 100, y: 100 },
           data: {
             id: triggerId,
             type: 'command_slash',
-            label: definition.label,
+            label: triggerDef.label,
             category: 'triggers',
             properties: { name: 'ping', description: 'Replies with Pong!' },
             isValid: true,
@@ -303,15 +365,92 @@ export const useProjectStore = create<ProjectState>()(
           },
         }
 
+        const replyBlock: CanvasBlock = {
+          id: replyId,
+          type: 'action_reply',
+          position: { x: 500, y: 100 },
+          data: {
+            id: replyId,
+            type: 'action_reply',
+            label: replyDef.label,
+            category: replyDef.category,
+            properties: { content: 'Pong! 🏓', ephemeral: false, tts: false },
+            isValid: true,
+            errors: [],
+            warnings: [],
+          },
+        }
+
+        const errorHandlerBlock: CanvasBlock = {
+          id: errorHandlerId,
+          type: 'error_handler',
+          position: { x: 300, y: 300 },
+          data: {
+            id: errorHandlerId,
+            type: 'error_handler',
+            label: errorHandlerDef.label,
+            category: errorHandlerDef.category,
+            properties: { logToConsole: true },
+            isValid: true,
+            errors: [],
+            warnings: [],
+          },
+        }
+
+        const errorEmbedBlock: CanvasBlock = {
+          id: errorEmbedId,
+          type: 'send_embed',
+          position: { x: 600, y: 300 },
+          data: {
+            id: errorEmbedId,
+            type: 'send_embed',
+            label: errorEmbedDef.label,
+            category: errorEmbedDef.category,
+            properties: {
+              title: 'Command Error',
+              description: 'Something went wrong while running this command.',
+              color: '#EF4444',
+              timestamp: true,
+            },
+            isValid: true,
+            errors: [],
+            warnings: [],
+          },
+        }
+
+        const connections = [
+          {
+            id: edgeId,
+            source: triggerId,
+            target: replyId,
+            sourceHandle: 'output',
+            targetHandle: 'input',
+          },
+          {
+            id: errorEdgeId,
+            source: replyId, // Error handler should connect from the action that might fail, not the trigger
+            target: errorHandlerId,
+            sourceHandle: 'output',
+            targetHandle: 'input',
+          },
+          {
+            id: errorEmbedEdgeId,
+            source: errorHandlerId,
+            target: errorEmbedId,
+            sourceHandle: 'output',
+            targetHandle: 'input',
+          },
+        ]
+
         const newCommand: Command = {
           id,
           type: 'slash',
-          name: 'New Command',
+          name: 'ping',
           description: 'A new slash command',
           options: [],
           canvas: {
-            blocks: [initialBlock],
-            connections: [],
+            blocks: [triggerBlock, replyBlock, errorHandlerBlock, errorEmbedBlock],
+            connections,
             selectedBlockId: triggerId,
             viewportPosition: { x: 0, y: 0, zoom: 1 },
           },
@@ -346,18 +485,34 @@ export const useProjectStore = create<ProjectState>()(
 
       // Events
       createEvent: () => {
+        get()._ensureActiveProject()
         const id = generateId('evt')
         const triggerId = generateId('block')
-        const definition = BLOCK_DEFINITIONS['event_listener']
+        const replyId = generateId('block')
+        const errorHandlerId = generateId('block')
+        const errorEmbedId = generateId('block')
+        const edgeId = generateId('edge')
+        const errorEdgeId = generateId('edge')
+        const errorEmbedEdgeId = generateId('edge')
 
-        const initialBlock: CanvasBlock = {
+        const triggerDef = BLOCK_DEFINITIONS['event_listener']
+        const replyDef = BLOCK_DEFINITIONS['send_message']
+        const errorHandlerDef = BLOCK_DEFINITIONS['error_handler']
+        const errorEmbedDef = BLOCK_DEFINITIONS['send_embed']
+
+        if (!triggerDef || !replyDef || !errorHandlerDef || !errorEmbedDef) {
+          console.error('Missing block definitions for event creation')
+          return ''
+        }
+
+        const triggerBlock: CanvasBlock = {
           id: triggerId,
           type: 'event_listener',
-          position: { x: 250, y: 150 },
+          position: { x: 100, y: 100 },
           data: {
             id: triggerId,
             type: 'event_listener',
-            label: definition.label,
+            label: triggerDef.label,
             category: 'triggers',
             properties: { event: 'messageCreate' },
             isValid: true,
@@ -366,14 +521,91 @@ export const useProjectStore = create<ProjectState>()(
           },
         }
 
+        const replyBlock: CanvasBlock = {
+          id: replyId,
+          type: 'send_message',
+          position: { x: 300, y: 100 },
+          data: {
+            id: replyId,
+            type: 'send_message',
+            label: replyDef.label,
+            category: replyDef.category,
+            properties: { content: 'I saw that!', channel_id: 'auto' },
+            isValid: true,
+            errors: [],
+            warnings: [],
+          },
+        }
+
+        const errorHandlerBlock: CanvasBlock = {
+          id: errorHandlerId,
+          type: 'error_handler',
+          position: { x: 300, y: 250 },
+          data: {
+            id: errorHandlerId,
+            type: 'error_handler',
+            label: errorHandlerDef.label,
+            category: errorHandlerDef.category,
+            properties: { logToConsole: true },
+            isValid: true,
+            errors: [],
+            warnings: [],
+          },
+        }
+
+        const errorEmbedBlock: CanvasBlock = {
+          id: errorEmbedId,
+          type: 'send_embed',
+          position: { x: 500, y: 250 },
+          data: {
+            id: errorEmbedId,
+            type: 'send_embed',
+            label: errorEmbedDef.label,
+            category: errorEmbedDef.category,
+            properties: {
+              title: 'Event Error',
+              description: 'Something went wrong while processing the event.',
+              color: '#EF4444',
+              timestamp: true,
+            },
+            isValid: true,
+            errors: [],
+            warnings: [],
+          },
+        }
+
+        const connections = [
+          {
+            id: edgeId,
+            source: triggerId,
+            target: replyId,
+            sourceHandle: 'output',
+            targetHandle: 'input',
+          },
+          {
+            id: errorEdgeId,
+            source: replyId, // Error handler should connect from the action that might fail
+            target: errorHandlerId,
+            sourceHandle: 'output',
+            targetHandle: 'input',
+          },
+          {
+            id: errorEmbedEdgeId,
+            source: errorHandlerId,
+            target: errorEmbedId,
+            sourceHandle: 'output',
+            targetHandle: 'input',
+          },
+        ]
+
         const newEvent: EventListener = {
           id,
           eventType: 'messageCreate',
           name: 'New Event',
           description: 'A new event listener',
           canvas: {
-            blocks: [initialBlock],
-            connections: [],
+            blocks: [triggerBlock, replyBlock, errorHandlerBlock, errorEmbedBlock],
+            connections,
             selectedBlockId: triggerId,
             viewportPosition: { x: 0, y: 0, zoom: 1 },
           },
@@ -428,24 +660,8 @@ export const useProjectStore = create<ProjectState>()(
 
       // Modules
       createModule: () => {
+        get()._ensureActiveProject()
         const id = generateId('mod')
-        const triggerId = generateId('block')
-
-        const initialBlock: CanvasBlock = {
-          id: triggerId,
-          type: 'command_slash',
-          position: { x: 250, y: 150 },
-          data: {
-            id: triggerId,
-            type: 'command_slash',
-            label: 'Module Entry',
-            category: 'triggers',
-            properties: { name: 'mod_cmd', description: 'Module main command' },
-            isValid: true,
-            errors: [],
-            warnings: [],
-          },
-        }
 
         const newModule: Module = {
           id,
@@ -454,9 +670,9 @@ export const useProjectStore = create<ProjectState>()(
           commands: [],
           events: [],
           canvas: {
-            blocks: [initialBlock],
+            blocks: [], // Start with empty canvas for modules - users can add blocks as needed
             connections: [],
-            selectedBlockId: triggerId,
+            selectedBlockId: null,
             viewportPosition: { x: 0, y: 0, zoom: 1 },
           },
           createdAt: Date.now(),
@@ -600,9 +816,116 @@ export const useProjectStore = create<ProjectState>()(
           return { files }
         })
       },
+
+      updateDeployment: updates => {
+        get()._updateActive(project => ({
+          deployment: { ...project.deployment, ...updates },
+        }))
+      },
+
+      updateGit: updates => {
+        get()._updateActive(project => ({
+          git: { ...project.git, ...updates } as GitConfig,
+        }))
+      },
+
+      // Tauri/Offline functionality
+      saveProjectToDisk: async (projectId?: string) => {
+        const state = get()
+        const id = projectId || state.activeProjectId
+        const project = state.projects[id]
+
+        if (!project) {
+          throw new Error(`Project with id ${id} not found`)
+        }
+
+        try {
+          const projectData = JSON.stringify(project)
+          await ApiWrapper.saveProject(id, projectData)
+        } catch (error) {
+          console.error('Error saving project to disk:', error)
+          // Fallback to localStorage if Tauri fails
+          localStorage.setItem(`project_${id}`, JSON.stringify(project))
+        }
+      },
+
+      loadProjectFromDisk: async (projectId: string) => {
+        try {
+          const projectData = await ApiWrapper.loadProject(projectId)
+          const project = JSON.parse(projectData)
+
+          set(state => ({
+            projects: { ...state.projects, [projectId]: project },
+            activeProjectId: projectId,
+            name: project.name,
+            description: project.description,
+            language: project.language,
+            settings: project.settings,
+            commands: project.commands,
+            events: project.events,
+            modules: project.modules,
+            variables: project.variables || [],
+          }))
+        } catch (error) {
+          console.error('Error loading project from disk:', error)
+          // Fallback to localStorage if Tauri fails
+          const storedProject = localStorage.getItem(`project_${projectId}`)
+          if (storedProject) {
+            const project = JSON.parse(storedProject)
+
+            set(state => ({
+              projects: { ...state.projects, [projectId]: project },
+              activeProjectId: projectId,
+              name: project.name,
+              description: project.description,
+              language: project.language,
+              settings: project.settings,
+              commands: project.commands,
+              events: project.events,
+              modules: project.modules,
+              variables: project.variables || [],
+            }))
+          }
+        }
+      },
+
+      listProjectsFromDisk: async (): Promise<string[]> => {
+        try {
+          return await ApiWrapper.listProjects()
+        } catch (error) {
+          console.error('Error listing projects from disk:', error)
+          // Fallback to localStorage
+          const projectIds: string[] = []
+          for (let i = 0; i < localStorage.length; i++) {
+            const key = localStorage.key(i)
+            if (key && key.startsWith('project_')) {
+              projectIds.push(key.replace('project_', ''))
+            }
+          }
+          return projectIds
+        }
+      },
+
+      syncWithCloud: async (projectId?: string): Promise<boolean> => {
+        const state = get()
+        const id = projectId || state.activeProjectId
+        const project = state.projects[id]
+
+        if (!project) {
+          throw new Error(`Project with id ${id} not found`)
+        }
+
+        try {
+          const projectData = JSON.stringify(project)
+          return await ApiWrapper.syncWithCloud(id, projectData)
+        } catch (error) {
+          console.error('Error syncing project with cloud:', error)
+          return false
+        }
+      },
     }),
     {
-      name: 'kyto-workspace-storage-v1',
+      name: 'kyto-workspace-storage-v2',
       onRehydrateStorage: () => state => {
         if (state && state.projects && state.activeProjectId) {
           const active = state.projects[state.activeProjectId]

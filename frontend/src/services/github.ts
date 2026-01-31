@@ -53,7 +53,7 @@ export async function commitFilesToRepo(
     if (json && json.success) return { success: true }
 
     return { success: false, details: json.error || JSON.stringify(json) }
-  } catch (err: any) {
+  } catch (err: unknown) {
     return { success: false, details: String(err) }
   }
 }
